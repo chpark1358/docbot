@@ -190,8 +190,8 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   }, [sendMessage, threadId]);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-8">
+    <div className="relative flex h-full min-h-[calc(100vh-120px)] flex-col">
+      <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-6 pb-44">
         <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="flex flex-col gap-4">
             {messages.length === 0 ? (
@@ -261,21 +261,23 @@ export function ChatClient({ threadId, initialMessages }: Props) {
         </div>
       </div>
 
-      <div className="border-t bg-background/70 backdrop-blur">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-background to-transparent" />
+
+      <div className="sticky bottom-0 z-20 border-t bg-background/85 backdrop-blur">
         <div className="mx-auto w-full max-w-4xl px-4 py-4">
           <div className="relative">
             <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-emerald-500/15 via-cyan-400/10 to-amber-400/15 blur-2xl" />
-            <div className="relative rounded-3xl border bg-background/80 p-3 shadow-[0_18px_60px_-24px_rgba(0,0,0,0.35)]">
+            <div className="relative rounded-3xl border bg-background/90 p-3 shadow-[0_18px_60px_-24px_rgba(0,0,0,0.35)]">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="문서 내용에 대해 질문하세요. (Enter 전송 / Shift+Enter 줄바꿈)"
-                  className="min-h-[84px] resize-none border-none bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
-                  disabled={isLoading}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      void sendMessage();
+                className="min-h-[84px] resize-none border-none bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
+                disabled={isLoading}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    void sendMessage();
                   }
                 }}
               />

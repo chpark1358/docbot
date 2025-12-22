@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { MessageCircle, Plus, Search, Library, Sparkles, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Search, Library, Sparkles, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +40,7 @@ export function AppSidebar({ userEmail, threads }: Props) {
   const pathname = usePathname();
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<ThreadItem[]>(threads);
+  const [collapsed, setCollapsed] = useState(false);
 
   useEffect(() => {
     setItems(threads);
@@ -70,15 +71,31 @@ export function AppSidebar({ userEmail, threads }: Props) {
   };
 
   return (
-    <aside className="hidden w-[320px] shrink-0 border-r bg-background/70 backdrop-blur-xl lg:flex lg:flex-col">
-      <div className="flex h-14 items-center gap-2 px-6">
+    <aside
+      className={cn(
+        "hidden shrink-0 border-r bg-background/70 backdrop-blur-xl transition-all lg:flex lg:flex-col",
+        collapsed ? "w-[68px]" : "w-[320px]",
+      )}
+    >
+      <div className="flex h-14 items-center gap-2 px-3">
         <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 text-white shadow-sm">
           <Sparkles className="h-4 w-4" />
         </div>
-        <div className="leading-tight">
-          <div className="text-sm font-semibold">Enterprise</div>
-          <div className="text-xs text-muted-foreground">문서 기반 챗봇</div>
-        </div>
+        {!collapsed ? (
+          <div className="leading-tight">
+            <div className="text-sm font-semibold">Enterprise</div>
+            <div className="text-xs text-muted-foreground">문서 기반 챗봇</div>
+          </div>
+        ) : null}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto h-8 w-8 text-muted-foreground"
+          onClick={() => setCollapsed((v) => !v)}
+          title={collapsed ? "사이드바 펼치기" : "사이드바 접기"}
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </Button>
       </div>
 
       <div className="px-6 pb-4 pt-2">
@@ -93,26 +110,30 @@ export function AppSidebar({ userEmail, threads }: Props) {
               <Library className="h-4 w-4" /> 문서 라이브러리
             </Button>
           </Link>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="채팅 제목 검색"
-              className="pl-8"
-            />
-          </div>
+          {!collapsed ? (
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="채팅 제목 검색"
+                className="pl-8"
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 
       <Separator />
 
-      <div className="px-6 py-4">
-        <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Chats</div>
-      </div>
+      {!collapsed ? (
+        <div className="px-6 py-4">
+          <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Chats</div>
+        </div>
+      ) : null}
 
       <ScrollArea className="flex-1 px-3 pb-4">
-        <div className="grid gap-1 px-3">
+        <div className={cn("grid gap-1", collapsed ? "px-1" : "px-3")}>
           {filtered.length === 0 ? (
             <div className="rounded-lg border border-dashed bg-background/60 p-4 text-sm text-muted-foreground">
               {items.length === 0 ? (
@@ -136,13 +157,13 @@ export function AppSidebar({ userEmail, threads }: Props) {
                 <div
                   key={t.id}
                   className={cn(
-                    "group flex items-center gap-3 rounded-xl border px-3 py-2 text-sm transition hover:bg-muted/60",
+                    "group flex items-center gap-3 rounded-xl border px-2 py-2 text-sm transition hover:bg-muted/60",
                     active ? "border-primary/30 bg-muted/70 shadow-sm" : "border-transparent",
                   )}
                 >
                   <Link
                     href={href}
-                    className="flex flex-1 items-center gap-3"
+                    className={cn("flex flex-1 items-center gap-3", collapsed ? "justify-center" : "")}
                   >
                     <div
                       className={cn(
@@ -152,28 +173,32 @@ export function AppSidebar({ userEmail, threads }: Props) {
                     >
                       <MessageCircle className="h-4 w-4" />
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <div className={cn("truncate font-medium", active ? "text-foreground" : "text-foreground/90")}>
-                        {t.title || "새 대화"}
+                    {!collapsed ? (
+                      <div className="min-w-0 flex-1">
+                        <div className={cn("truncate font-medium", active ? "text-foreground" : "text-foreground/90")}>
+                          {t.title || "새 대화"}
+                        </div>
+                        <div className="truncate text-xs text-muted-foreground">
+                          {formatThreadDate(t.created_at)}
+                        </div>
                       </div>
-                      <div className="truncate text-xs text-muted-foreground">
-                        {formatThreadDate(t.created_at)}
-                      </div>
-                    </div>
+                    ) : null}
                   </Link>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border-destructive/40 text-destructive"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      void handleDelete(t.id);
-                    }}
-                    title="채팅 삭제"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {!collapsed ? (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 border-destructive/40 text-destructive"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void handleDelete(t.id);
+                      }}
+                      title="채팅 삭제"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  ) : null}
                 </div>
               );
             })
@@ -183,9 +208,11 @@ export function AppSidebar({ userEmail, threads }: Props) {
 
       <Separator />
 
-      <div className="px-6 py-4">
-        <div className="text-xs text-muted-foreground">로그인: {userEmail}</div>
-      </div>
+      {!collapsed ? (
+        <div className="px-6 py-4">
+          <div className="text-xs text-muted-foreground">로그인: {userEmail}</div>
+        </div>
+      ) : null}
     </aside>
   );
 }
