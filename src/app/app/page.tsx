@@ -1,134 +1,65 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { LogOut, FileText, MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { UploadForm } from "./_components/upload-form";
 import { createClient } from "@/lib/supabase/server";
+import { ALL_DOCS_MIME_TYPE, VIRTUAL_CHAT_MIME_TYPE } from "@/lib/constants";
+import { NewChatComposer } from "./_components/new-chat-composer";
 
-type DocumentRow = {
-  id: string;
-  title: string;
-  status: string;
-  size: number;
-  mime_type: string;
-  created_at: string;
-  error_message: string | null;
-};
+export const dynamic = "force-dynamic";
 
-const humanSize = (bytes: number) => {
-  if (bytes === 0) return "0 B";
-  const sizes = ["B", "KB", "MB", "GB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
-};
-
-const statusColor = (status: string) => {
-  switch (status) {
-    case "ready":
-      return "text-emerald-600";
-    case "processing":
-      return "text-amber-600";
-    case "failed":
-      return "text-red-600";
-    default:
-      return "text-muted-foreground";
-  }
-};
-
-export default async function AppHome() {
-  const supabase = createClient();
+export default async function ChatHomePage() {
+  const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     redirect("/login");
   }
 
-  const { data: docs } = await supabase
+  const { count: readyCount } = await supabase
     .from("documents")
-    .select("id, title, status, size, mime_type, created_at, error_message")
-    .order("created_at", { ascending: false })
-    .returns<DocumentRow[] | null>();
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("status", "ready")
+    .neq("mime_type", VIRTUAL_CHAT_MIME_TYPE)
+    .neq("mime_type", ALL_DOCS_MIME_TYPE);
 
-  const email = session.user.email ?? "익명";
+  const displayName = (user.user_metadata as { display_name?: string } | null)?.display_name;
+  const email = user.email ?? "사용자";
+  const name = displayName || email;
+  const readyDocs = readyCount ?? 0;
 
   return (
-    <main className="flex min-h-screen flex-col gap-8 bg-background px-6 py-10">
-      <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-        <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground">로그인된 이메일</p>
-            <p className="text-lg font-semibold">{email}</p>
+    <div className="relative h-full overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-white via-emerald-50/40 to-white">
+          <div className="absolute left-10 top-10 h-64 w-64 rounded-full bg-emerald-200/30 blur-3xl" />
+          <div className="absolute right-10 top-24 h-64 w-64 rounded-full bg-amber-200/30 blur-3xl" />
+          <div className="absolute left-1/2 top-48 h-80 w-80 -translate-x-1/2 rounded-full bg-sky-200/30 blur-3xl" />
+        </div>
+
+      <div className="relative mx-auto flex h-full w-full max-w-5xl flex-col items-center justify-center gap-8 px-6 py-10">
+        <div className="space-y-3 text-center">
+          <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+            만나서 반가워요! <span className="text-primary">{name}</span>님
+          </h1>
+          <p className="mx-auto max-w-xl text-sm leading-6 text-muted-foreground">
+            업로드한 모든 문서를 통합해서 답변해요. 웹 검색 모드로 최신 정보도 함께 물어볼 수 있습니다.
+          </p>
+        </div>
+
+        <div className="w-full">
+          <NewChatComposer readyCount={readyDocs} />
+        </div>
+
+        {!readyDocs ? (
+          <div className="text-center text-sm text-muted-foreground">
+            먼저 문서를 업로드하고 처리 완료 후 채팅을 시작하세요.{" "}
+            <Link href="/app/documents" className="text-primary underline-offset-4 hover:underline">
+              문서 라이브러리로 이동
+            </Link>
           </div>
-          <form action={logout}>
-            <Button variant="outline" type="submit" className="gap-2">
-              <LogOut className="h-4 w-4" /> 로그아웃
-            </Button>
-          </form>
-        </header>
-
-        <UploadForm />
-
-        <Card>
-          <CardHeader>
-            <CardTitle>내 문서</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!docs?.length ? (
-              <p className="text-sm text-muted-foreground">업로드된 문서가 없습니다. 위에서 업로드를 시작하세요.</p>
-            ) : (
-              <div className="divide-y">
-                {docs.map((doc) => (
-                  <div key={doc.id} className="flex items-center justify-between gap-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                        <FileText className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                  <div>
-                    <p className="font-medium">{doc.title}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {new Date(doc.created_at).toLocaleString()} · {doc.mime_type} · {humanSize(doc.size)}
-                    </p>
-                        {doc.error_message ? (
-                          <p className="text-xs text-destructive">에러: {doc.error_message}</p>
-                        ) : null}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className={`text-sm font-semibold ${statusColor(doc.status)}`}>
-                        {doc.status === "ready"
-                          ? "처리 완료"
-                          : doc.status === "processing"
-                            ? "처리 중"
-                            : doc.status === "failed"
-                              ? "실패"
-                              : "대기"}
-                      </span>
-                      {doc.status === "ready" ? (
-                        <Link href={`/app/documents/${doc.id}/chat`}>
-                          <Button size="sm" variant="outline" className="gap-2">
-                            <MessageCircle className="h-4 w-4" /> 대화하기
-                          </Button>
-                        </Link>
-                      ) : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        ) : null}
       </div>
-    </main>
+    </div>
   );
-}
-
-async function logout() {
-  "use server";
-
-  const supabase = createClient();
-  await supabase.auth.signOut();
-  redirect("/login");
 }

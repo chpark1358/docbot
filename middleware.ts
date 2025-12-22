@@ -21,27 +21,27 @@ export async function middleware(req: NextRequest) {
         return req.cookies.getAll();
       },
       setAll(cookies) {
-        cookies.forEach((cookie) => {
-          res.cookies.set(cookie);
+        cookies.forEach(({ name, value, options }) => {
+          res.cookies.set(name, value, options);
         });
       },
     },
   });
 
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const isAuthRoute = req.nextUrl.pathname.startsWith("/login");
   const isProtectedRoute = req.nextUrl.pathname.startsWith("/app");
 
-  if (!session && isProtectedRoute) {
+  if (!user && isProtectedRoute) {
     const redirectUrl = new URL("/login", req.url);
     redirectUrl.searchParams.set("redirect", req.nextUrl.pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (session && isAuthRoute) {
+  if (user && isAuthRoute) {
     return NextResponse.redirect(new URL("/app", req.url));
   }
 

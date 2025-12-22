@@ -18,10 +18,10 @@ export default async function Home() {
     );
   }
 
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  redirect(session ? "/app" : "/login");
+  redirect(user ? "/app" : "/login");
 }

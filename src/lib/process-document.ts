@@ -7,6 +7,8 @@ import type { Database } from "@/lib/database.types";
 
 type Supabase = SupabaseClient<Database>;
 
+const CHUNK_INSERT_BATCH_SIZE = 50;
+
 const markFailed = async (supabase: Supabase, documentId: string, message: string) => {
   await supabase
     .from("documents")
@@ -66,9 +68,12 @@ export const processDocument = async (
       metadata: {},
     }));
 
-    const insert = await supabase.from("document_chunks").insert(rows);
-    if (insert.error) {
-      throw new Error(insert.error.message);
+    for (let start = 0; start < rows.length; start += CHUNK_INSERT_BATCH_SIZE) {
+      const batch = rows.slice(start, start + CHUNK_INSERT_BATCH_SIZE);
+      const insert = await supabase.from("document_chunks").insert(batch);
+      if (insert.error) {
+        throw new Error(insert.error.message);
+      }
     }
 
     await supabase

@@ -135,6 +135,51 @@ begin
 end;
 $$;
 
+-- 유사도 검색 함수 (사용자 소유 모든 문서 대상)
+create or replace function public.match_chunks_all_user (
+  query_embedding vector(1536),
+  match_count int default 6,
+  similarity_threshold float default 0.0
+)
+returns table (
+  id uuid,
+  document_id uuid,
+  doc_title text,
+  content text,
+  metadata jsonb,
+  similarity float
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  requester uuid := auth.uid();
+begin
+  if requester is null then
+    raise exception 'not authenticated';
+  end if;
+
+  return query
+  select
+    dc.id,
+    dc.document_id,
+    d.title as doc_title,
+    dc.content,
+    dc.metadata,
+    1 - (dc.embedding <=> query_embedding) as similarity
+  from public.document_chunks dc
+  join public.documents d on d.id = dc.document_id
+  where dc.user_id = requester
+    and d.user_id = requester
+    and d.status = 'ready'
+    and d.mime_type not in ('application/x-virtual-chat', 'application/x-all-docs')
+    and (1 - (dc.embedding <=> query_embedding)) >= similarity_threshold
+  order by dc.embedding <=> query_embedding
+  limit match_count;
+end;
+$$;
+
 -- Storage: documents bucket 및 정책
 insert into storage.buckets (id, name, public)
 values ('documents', 'documents', false)

@@ -1,6 +1,3 @@
-import pdf from "pdf-parse";
-import mammoth from "mammoth";
-
 type MimeKind = "pdf" | "docx" | "txt" | "unknown";
 
 const detectKind = (mimeType: string): MimeKind => {
@@ -10,15 +7,75 @@ const detectKind = (mimeType: string): MimeKind => {
   return "unknown";
 };
 
+type MammothModule = { extractRawText: (input: { buffer: Buffer }) => Promise<{ value: string }> };
+
+let pdfWorkerSetupPromise: Promise<void> | null = null;
+
+const ensurePdfWorkerSetup = async (PDFParse: unknown): Promise<void> => {
+  if (pdfWorkerSetupPromise) return pdfWorkerSetupPromise;
+
+  pdfWorkerSetupPromise = (async () => {
+    const setWorker = (PDFParse as { setWorker?: (src: string) => void } | null)?.setWorker;
+    if (typeof setWorker !== "function") return;
+
+    try {
+      // 1차: 번들 상대 경로(Next/Turbopack에서 import.meta.url 기반으로 치환됨)
+      const workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
+      setWorker(workerSrc);
+    } catch {
+      try {
+        // 2차: node_modules 실제 경로(file://)로 지정
+        const { createRequire } = await import("node:module");
+        const { pathToFileURL } = await import("node:url");
+        const require = createRequire(import.meta.url);
+        const workerPath = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+        setWorker(pathToFileURL(workerPath).toString());
+      } catch {
+        // worker 경로 지정이 실패해도 기본 동작으로 계속 진행합니다.
+      }
+    }
+  })();
+
+  return pdfWorkerSetupPromise;
+};
+
 export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promise<string> => {
   const kind = detectKind(mimeType);
 
   switch (kind) {
     case "pdf": {
-      const result = await pdf(buffer);
-      return result.text;
+      const pdfModule = (await import("pdf-parse")) as unknown as Record<string, unknown>;
+
+      // Legacy API: default export is a function
+      const legacyFn = pdfModule.default ?? pdfModule;
+      if (typeof legacyFn === "function") {
+        const result = await (legacyFn as (data: Buffer) => Promise<{ text?: string }>)(buffer);
+        return result.text ?? "";
+      }
+
+      // Current API: named export PDFParse (class)
+      const PDFParse = pdfModule.PDFParse;
+      if (typeof PDFParse === "function") {
+        await ensurePdfWorkerSetup(PDFParse);
+
+        const parser = new (PDFParse as new (options: { data: Buffer }) => {
+          getText: () => Promise<{ text: string }>;
+          destroy?: () => Promise<void> | void;
+        })({ data: buffer });
+
+        try {
+          const result = await parser.getText();
+          return result.text;
+        } finally {
+          await parser.destroy?.();
+        }
+      }
+
+      throw new Error("PDF 파서를 초기화할 수 없습니다. (pdf-parse export 형태 확인 필요)");
     }
     case "docx": {
+      const mammothModule = (await import("mammoth")) as unknown as { default?: MammothModule } & MammothModule;
+      const mammoth: MammothModule = mammothModule.default ?? mammothModule;
       const result = await mammoth.extractRawText({ buffer });
       return result.value;
     }

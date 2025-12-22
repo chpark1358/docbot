@@ -3,8 +3,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import type { Database } from "@/lib/database.types";
 
-export const createClient = (): SupabaseClient<Database> => {
-  const cookieStore = cookies();
+export const createClient = async (): Promise<SupabaseClient<Database>> => {
+  const cookieStore = await cookies();
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -17,10 +17,14 @@ export const createClient = (): SupabaseClient<Database> => {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookies) {
-        cookies.forEach((cookie) => {
-          cookieStore.set(cookie);
-        });
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {
+          // Server Component에서는 쿠키 설정이 불가할 수 있어 무시
+        }
       },
     },
   });
