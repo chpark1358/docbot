@@ -1,7 +1,8 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export async function DELETE(_: Request, { params }: { params: { id: string } }) {
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { id: threadId } = await params;
   const supabase = await createClient();
   const {
     data: { user },
@@ -11,7 +12,6 @@ export async function DELETE(_: Request, { params }: { params: { id: string } })
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  const threadId = params.id;
   if (!threadId) {
     return NextResponse.json({ error: "threadId가 필요합니다." }, { status: 400 });
   }
