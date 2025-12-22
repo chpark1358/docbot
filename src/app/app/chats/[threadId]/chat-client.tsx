@@ -35,11 +35,13 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const messagesRef = useRef<HTMLDivElement | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
 
   const scrollToBottom = useCallback(() => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    const target = messagesRef.current ?? scrollRef.current;
+    if (!target) return;
+    target.scrollTo({ top: target.scrollHeight, behavior: "smooth" });
   }, []);
 
   const renderContent = (text: string) => {
@@ -80,7 +82,8 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   };
 
   useEffect(() => {
-    scrollToBottom();
+    const timer = setTimeout(() => scrollToBottom(), 0);
+    return () => clearTimeout(timer);
   }, [messages.length, scrollToBottom]);
 
   const sendMessage = useCallback(
@@ -113,7 +116,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               : m,
           ),
         );
-        scrollToBottom();
+        requestAnimationFrame(scrollToBottom);
       };
 
       try {
@@ -197,9 +200,10 @@ export function ChatClient({ threadId, initialMessages }: Props) {
 
   return (
     <div className="relative flex min-h-screen flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-6 pb-48">
-        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
-          <div className="flex flex-col gap-4">
+      <div ref={scrollRef} className="flex-1 overflow-hidden">
+        <div className="mx-auto grid h-full w-full max-w-5xl grid-cols-1 gap-6 px-4 pb-48 pt-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="flex h-full flex-col gap-4 overflow-hidden">
+            <div ref={messagesRef} className="flex-1 overflow-auto pr-1">
             {messages.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-2 py-24 text-center">
                 <div className="text-2xl font-semibold tracking-tight">무엇이든 물어보세요</div>
@@ -223,6 +227,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                 </div>
               ))
             )}
+            </div>
 
             {isLoading ? (
               <div className="flex justify-start">
