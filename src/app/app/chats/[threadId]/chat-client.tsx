@@ -190,8 +190,8 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   }, [sendMessage, threadId]);
 
   return (
-    <div className="relative flex h-full min-h-[calc(100vh-120px)] flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-6 pb-44">
+    <div className="relative flex min-h-screen flex-col">
+      <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-6 pb-48">
         <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="flex flex-col gap-4">
             {messages.length === 0 ? (
@@ -261,9 +261,9 @@ export function ChatClient({ threadId, initialMessages }: Props) {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-28 bg-gradient-to-t from-background to-transparent" />
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-28 bg-gradient-to-t from-background to-transparent" />
 
-      <div className="sticky bottom-0 z-20 border-t bg-background/85 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/90 backdrop-blur">
         <div className="mx-auto w-full max-w-4xl px-4 py-4">
           <div className="relative">
             <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-emerald-500/15 via-cyan-400/10 to-amber-400/15 blur-2xl" />
