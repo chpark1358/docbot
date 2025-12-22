@@ -269,11 +269,11 @@ export function ChatClient({ threadId, initialMessages }: Props) {
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-28 bg-gradient-to-t from-background to-transparent" />
 
-      <div className="fixed inset-x-0 bottom-0 z-30 bg-background/90 backdrop-blur">
-        <div className="mx-auto w-full max-w-4xl px-4 py-4">
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-30 bg-transparent">
+        <div className="pointer-events-auto mx-auto w-full max-w-3xl px-4 py-3 sm:py-4">
           <div className="relative">
             <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-emerald-500/15 via-cyan-400/10 to-amber-400/15 blur-2xl" />
-            <div className="relative rounded-3xl border bg-background/90 p-3 shadow-[0_18px_60px_-24px_rgba(0,0,0,0.35)]">
+            <div className="relative rounded-3xl border bg-background/95 p-3 shadow-[0_18px_60px_-24px_rgba(0,0,0,0.35)]">
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
