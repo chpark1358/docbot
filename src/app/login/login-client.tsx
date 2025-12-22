@@ -98,24 +98,26 @@ export function LoginClient() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-16 top-24 h-[340px] w-[340px] rounded-full bg-indigo-500/12 blur-3xl" />
-        <div className="absolute -right-16 top-10 h-[420px] w-[420px] rounded-full bg-purple-500/12 blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl" />
+        <div className="absolute -left-10 top-24 h-[360px] w-[360px] rounded-[48%] bg-[radial-gradient(circle_at_30%_30%,rgba(99,102,241,0.28),transparent_60%)] blur-2xl" />
+        <div className="absolute -right-12 top-10 h-[420px] w-[420px] rounded-[46%] bg-[radial-gradient(circle_at_70%_20%,rgba(168,85,247,0.26),transparent_55%)] blur-2xl" />
+        <div className="absolute bottom-[-80px] left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-[52%] bg-[radial-gradient(circle_at_50%_50%,rgba(45,212,191,0.22),transparent_60%)] blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_35%,rgba(255,255,255,0.12)_70%)]" />
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-6 py-16">
         <section className="w-full max-w-md">
           <div className="mb-6 space-y-2 text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
-              <Sparkles className="h-4 w-4 text-indigo-500" />
+            <div className="inline-flex items-center gap-2 rounded-full border bg-card/80 px-3 py-1 text-xs text-muted-foreground backdrop-blur shadow-sm">
+              <Sparkles className="h-4 w-4 text-indigo-500 drop-shadow-sm" />
               로그인 / 회원가입
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">문서 기반 챗봇 시작하기</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground drop-shadow-sm">문서 기반 챗봇 시작하기</h1>
             <p className="text-sm text-muted-foreground">필요한 정보만 입력하고 바로 시작하세요.</p>
           </div>
 
-          <div className="relative rounded-[24px] border bg-card/75 p-6 shadow-[0_22px_80px_-28px_rgba(0,0,0,0.35)] backdrop-blur-xl">
-            <div className="mb-4 space-y-1">
+          <div className="relative overflow-hidden rounded-[24px] border bg-card/85 p-6 shadow-[0_26px_90px_-28px_rgba(0,0,0,0.40)] backdrop-blur-xl">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(79,70,229,0.10),transparent_35%),radial-gradient(circle_at_80%_10%,rgba(236,72,153,0.10),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.12),transparent_40%)]" />
+            <div className="relative mb-4 space-y-1">
               <h2 className="text-xl font-semibold tracking-tight">계정</h2>
               <p className="text-xs text-muted-foreground">아이디(또는 이메일)와 비밀번호로 로그인/회원가입</p>
             </div>
@@ -133,7 +135,7 @@ export function LoginClient() {
                     <Input
                       id="identifier"
                       autoComplete="username"
-                      placeholder="chpark 또는 you@example.com"
+                      placeholder="admin 또는 you@example.com"
                       value={identifier}
                       onChange={(event) => setIdentifier(event.target.value)}
                       disabled={isPending}
@@ -188,7 +190,7 @@ export function LoginClient() {
                     <Input
                       id="identifier_signup"
                       autoComplete="username"
-                      placeholder="chpark 또는 you@example.com"
+                      placeholder="admin 또는 you@example.com"
                       value={identifier}
                       onChange={(event) => setIdentifier(event.target.value)}
                       disabled={isPending}
@@ -201,7 +203,7 @@ export function LoginClient() {
                     <Input
                       id="display_name"
                       autoComplete="name"
-                      placeholder="표시할 이름 (예: 박찬호)"
+                      placeholder="표시할 이름 (예: 홍길동)"
                       value={displayName}
                       onChange={(event) => setDisplayName(event.target.value)}
                       disabled={isPending}
