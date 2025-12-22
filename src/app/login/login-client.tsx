@@ -98,10 +98,10 @@ export function LoginClient() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-10 top-24 h-[360px] w-[360px] rounded-[48%] bg-[radial-gradient(circle_at_30%_30%,rgba(99,102,241,0.28),transparent_60%)] blur-2xl" />
-        <div className="absolute -right-12 top-10 h-[420px] w-[420px] rounded-[46%] bg-[radial-gradient(circle_at_70%_20%,rgba(168,85,247,0.26),transparent_55%)] blur-2xl" />
-        <div className="absolute bottom-[-80px] left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-[52%] bg-[radial-gradient(circle_at_50%_50%,rgba(45,212,191,0.22),transparent_60%)] blur-3xl" />
-        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.12)_0%,rgba(255,255,255,0)_35%,rgba(255,255,255,0.12)_70%)]" />
+        <div className="absolute -left-10 top-24 h-[360px] w-[360px] rounded-[48%] bg-[radial-gradient(circle_at_30%_30%,rgba(16,185,129,0.22),transparent_60%)] blur-2xl" />
+        <div className="absolute -right-12 top-10 h-[420px] w-[420px] rounded-[46%] bg-[radial-gradient(circle_at_70%_20%,rgba(34,197,94,0.20),transparent_55%)] blur-2xl" />
+        <div className="absolute bottom-[-80px] left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-[52%] bg-[radial-gradient(circle_at_50%_50%,rgba(21,128,61,0.18),transparent_60%)] blur-3xl" />
+        <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0)_35%,rgba(255,255,255,0.10)_70%)]" />
       </div>
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-6 py-16">
