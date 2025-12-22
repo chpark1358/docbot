@@ -115,8 +115,7 @@ export function LoginClient() {
             <p className="text-sm text-muted-foreground">필요한 정보만 입력하고 바로 시작하세요.</p>
           </div>
 
-          <div className="relative overflow-hidden rounded-[24px] border bg-card/85 p-6 shadow-[0_26px_90px_-28px_rgba(0,0,0,0.40)] backdrop-blur-xl">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(79,70,229,0.10),transparent_35%),radial-gradient(circle_at_80%_10%,rgba(236,72,153,0.10),transparent_30%),radial-gradient(circle_at_50%_80%,rgba(16,185,129,0.12),transparent_40%)]" />
+          <div className="group relative overflow-hidden rounded-[24px] border bg-card p-6 shadow-[0_26px_90px_-28px_rgba(0,0,0,0.35)] transition-transform duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_30px_110px_-36px_rgba(0,0,0,0.45)]">
             <div className="relative mb-4 space-y-1">
               <h2 className="text-xl font-semibold tracking-tight">계정</h2>
               <p className="text-xs text-muted-foreground">아이디(또는 이메일)와 비밀번호로 로그인/회원가입</p>
