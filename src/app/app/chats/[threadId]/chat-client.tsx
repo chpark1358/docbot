@@ -37,6 +37,11 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
 
+  const scrollToBottom = useCallback(() => {
+    if (!scrollRef.current) return;
+    scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, []);
+
   const renderContent = (text: string) => {
     const lines = text.split(/\n+/).filter((l) => l.trim() !== "");
     return (
@@ -75,9 +80,8 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   };
 
   useEffect(() => {
-    if (!scrollRef.current) return;
-    scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages.length]);
+    scrollToBottom();
+  }, [messages.length, scrollToBottom]);
 
   const sendMessage = useCallback(
     async (override?: string) => {
@@ -99,6 +103,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
         ...prev,
         { id: streamingId, role: "assistant", content: "", created_at: new Date().toISOString(), sources: [] },
       ]);
+      scrollToBottom();
 
       const updateAssistant = (content: string, sources?: Source[]) => {
         setMessages((prev) =>
@@ -108,6 +113,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               : m,
           ),
         );
+        scrollToBottom();
       };
 
       try {
@@ -263,7 +269,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-20 h-28 bg-gradient-to-t from-background to-transparent" />
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/90 backdrop-blur">
+      <div className="fixed inset-x-0 bottom-0 z-30 bg-background/90 backdrop-blur">
         <div className="mx-auto w-full max-w-4xl px-4 py-4">
           <div className="relative">
             <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-emerald-500/15 via-cyan-400/10 to-amber-400/15 blur-2xl" />
