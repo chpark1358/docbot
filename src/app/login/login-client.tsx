@@ -128,157 +128,156 @@ export function LoginClient() {
 
               <TabsContent value="signin" className="space-y-5">
                 <form className="space-y-4" onSubmit={handleSubmit("signin")}>
-                    <div className="space-y-2">
-                      <Label htmlFor="identifier">아이디 또는 이메일</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="identifier">아이디 또는 이메일</Label>
+                    <Input
+                      id="identifier"
+                      autoComplete="username"
+                      placeholder="chpark 또는 you@example.com"
+                      value={identifier}
+                      onChange={(event) => setIdentifier(event.target.value)}
+                      disabled={isPending}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">비밀번호</Label>
+                    <div className="relative">
                       <Input
-                        id="identifier"
-                        autoComplete="username"
-                        placeholder="chpark 또는 you@example.com"
-                        value={identifier}
-                        onChange={(event) => setIdentifier(event.target.value)}
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="current-password"
+                        placeholder="비밀번호를 입력하세요"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
                         disabled={isPending}
                         required
+                        className="pr-10"
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        disabled={isPending}
+                        aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="password">비밀번호</Label>
-                      <div className="relative">
-                        <Input
-                          id="password"
-                          type={showPassword ? "text" : "password"}
-                          autoComplete="current-password"
-                          placeholder="비밀번호를 입력하세요"
-                          value={password}
-                          onChange={(event) => setPassword(event.target.value)}
-                          disabled={isPending}
-                          required
-                          className="pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          disabled={isPending}
-                          aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
+                  </div>
 
-                    {error ? <p className="text-sm text-destructive">{error}</p> : null}
-                    {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
+                  {error ? <p className="text-sm text-destructive">{error}</p> : null}
+                  {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
 
-                    <Button className="w-full" type="submit" disabled={isPending}>
-                      {isPending ? "로그인 중..." : "로그인"}
-                    </Button>
-                  </form>
+                  <Button className="w-full" type="submit" disabled={isPending}>
+                    {isPending ? "로그인 중..." : "로그인"}
+                  </Button>
+                </form>
 
-                  <p className="text-center text-xs text-muted-foreground">
-                    로그인하면 서비스 이용 약관 및 개인정보 처리방침에 동의한 것으로 간주합니다.
-                  </p>
-                </TabsContent>
+                <p className="text-center text-xs text-muted-foreground">
+                  로그인하면 서비스 이용 약관 및 개인정보 처리방침에 동의한 것으로 간주합니다.
+                </p>
+              </TabsContent>
 
               <TabsContent value="signup" className="space-y-5">
                 <form className="space-y-4" onSubmit={handleSubmit("signup")}>
-                    <div className="space-y-2">
-                      <Label htmlFor="identifier_signup">아이디 또는 이메일</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="identifier_signup">아이디 또는 이메일</Label>
+                    <Input
+                      id="identifier_signup"
+                      autoComplete="username"
+                      placeholder="chpark 또는 you@example.com"
+                      value={identifier}
+                      onChange={(event) => setIdentifier(event.target.value)}
+                      disabled={isPending}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="display_name">이름</Label>
+                    <Input
+                      id="display_name"
+                      autoComplete="name"
+                      placeholder="표시할 이름 (예: 박찬호)"
+                      value={displayName}
+                      onChange={(event) => setDisplayName(event.target.value)}
+                      disabled={isPending}
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="password_signup">비밀번호</Label>
+                    <div className="relative">
                       <Input
-                        id="identifier_signup"
-                        autoComplete="username"
-                        placeholder="chpark 또는 you@example.com"
-                        value={identifier}
-                        onChange={(event) => setIdentifier(event.target.value)}
+                        id="password_signup"
+                        type={showPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        placeholder="8자 이상 비밀번호"
+                        value={password}
+                        onChange={(event) => setPassword(event.target.value)}
                         disabled={isPending}
                         required
+                        className="pr-10"
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        disabled={isPending}
+                        aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="display_name">이름</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm_password">비밀번호 확인</Label>
+                    <div className="relative">
                       <Input
-                        id="display_name"
-                        autoComplete="name"
-                        placeholder="표시할 이름 (예: 박찬호)"
-                        value={displayName}
-                        onChange={(event) => setDisplayName(event.target.value)}
+                        id="confirm_password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        autoComplete="new-password"
+                        placeholder="비밀번호를 다시 입력하세요"
+                        value={confirmPassword}
+                        onChange={(event) => setConfirmPassword(event.target.value)}
                         disabled={isPending}
                         required
+                        className="pr-10"
                       />
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        disabled={isPending}
+                        aria-label={showConfirmPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+                      >
+                        {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </Button>
                     </div>
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="password_signup">비밀번호</Label>
-                      <div className="relative">
-                        <Input
-                          id="password_signup"
-                          type={showPassword ? "text" : "password"}
-                          autoComplete="new-password"
-                          placeholder="8자 이상 비밀번호"
-                          value={password}
-                          onChange={(event) => setPassword(event.target.value)}
-                          disabled={isPending}
-                          required
-                          className="pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          disabled={isPending}
-                          aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                        >
-                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
+                  {error ? <p className="text-sm text-destructive">{error}</p> : null}
+                  {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="confirm_password">비밀번호 확인</Label>
-                      <div className="relative">
-                        <Input
-                          id="confirm_password"
-                          type={showConfirmPassword ? "text" : "password"}
-                          autoComplete="new-password"
-                          placeholder="비밀번호를 다시 입력하세요"
-                          value={confirmPassword}
-                          onChange={(event) => setConfirmPassword(event.target.value)}
-                          disabled={isPending}
-                          required
-                          className="pr-10"
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          onClick={() => setShowConfirmPassword((prev) => !prev)}
-                          disabled={isPending}
-                          aria-label={showConfirmPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
-                        >
-                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
+                  <Button className="w-full" type="submit" disabled={isPending}>
+                    {isPending ? "생성 중..." : "계정 생성"}
+                  </Button>
+                </form>
 
-                    {error ? <p className="text-sm text-destructive">{error}</p> : null}
-                    {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
-
-                    <Button className="w-full" type="submit" disabled={isPending}>
-                      {isPending ? "생성 중..." : "계정 생성"}
-                    </Button>
-                  </form>
-
-                  <p className="text-center text-xs text-muted-foreground">
-                    회원가입 후 이메일 인증이 필요할 수 있습니다. 받은 메일을 확인해주세요.
-                  </p>
-                </TabsContent>
-              </Tabs>
-            </div>
+                <p className="text-center text-xs text-muted-foreground">
+                  회원가입 후 이메일 인증이 필요할 수 있습니다. 받은 메일을 확인해주세요.
+                </p>
+              </TabsContent>
+            </Tabs>
           </div>
         </section>
       </div>
