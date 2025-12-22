@@ -98,69 +98,36 @@ export function LoginClient() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
       <div className="pointer-events-none absolute inset-0">
-        <div className="absolute -left-24 top-24 h-[420px] w-[420px] rounded-full bg-indigo-500/15 blur-3xl" />
-        <div className="absolute -right-24 top-10 h-[520px] w-[520px] rounded-full bg-purple-500/15 blur-3xl" />
-        <div className="absolute bottom-0 left-1/2 h-[560px] w-[560px] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(99,102,241,0.10),transparent_60%)]" />
+        <div className="absolute -left-16 top-24 h-[340px] w-[340px] rounded-full bg-indigo-500/12 blur-3xl" />
+        <div className="absolute -right-16 top-10 h-[420px] w-[420px] rounded-full bg-purple-500/12 blur-3xl" />
+        <div className="absolute bottom-0 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full bg-cyan-500/10 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto grid min-h-screen w-full max-w-6xl grid-cols-1 items-center gap-10 px-6 py-16 lg:grid-cols-2">
-        <section className="space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border bg-card/60 px-3 py-1 text-sm text-muted-foreground backdrop-blur">
-            <Sparkles className="h-4 w-4 text-indigo-500" />
-            문서 기반 RAG 챗봇 MVP
-          </div>
-          <div className="space-y-3">
-            <h1 className="text-4xl font-semibold tracking-tight lg:text-5xl">
-              문서에 대한 질문을
-              <span className="block bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500 bg-clip-text text-transparent">
-                가장 빠르게 답변으로
-              </span>
-            </h1>
-            <p className="max-w-xl text-base leading-7 text-muted-foreground">
-              PDF/DOCX/TXT 문서를 업로드하면 자동으로 벡터화하고, 필요한 내용만 찾아 근거 기반으로 답합니다. 문서 외 정보는
-              추측하지 않습니다.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border bg-card/60 p-4 shadow-sm backdrop-blur">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <FileText className="h-4 w-4 text-indigo-500" />
-                문서 중심 답변
-              </div>
-              <p className="text-sm leading-6 text-muted-foreground">
-                업로드한 문서 내용 기반으로만 답변하며, 출처(유사도) 정보를 함께 제공합니다.
-              </p>
+      <div className="relative mx-auto flex min-h-screen w-full max-w-5xl items-center justify-center px-6 py-16">
+        <section className="w-full max-w-md">
+          <div className="mb-6 space-y-2 text-center">
+            <div className="inline-flex items-center gap-2 rounded-full border bg-card/70 px-3 py-1 text-xs text-muted-foreground backdrop-blur">
+              <Sparkles className="h-4 w-4 text-indigo-500" />
+              로그인 / 회원가입
             </div>
-            <div className="rounded-2xl border bg-card/60 p-4 shadow-sm backdrop-blur">
-              <div className="mb-2 flex items-center gap-2 text-sm font-semibold">
-                <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                데이터 분리(RLS)
-              </div>
-              <p className="text-sm leading-6 text-muted-foreground">
-                사용자별 문서/대화/벡터 데이터는 분리되며, 접근 정책(RLS)을 기본으로 적용합니다.
-              </p>
-            </div>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground">문서 기반 챗봇 시작하기</h1>
+            <p className="text-sm text-muted-foreground">필요한 정보만 입력하고 바로 시작하세요.</p>
           </div>
-        </section>
 
-        <section className="flex w-full justify-center lg:justify-end">
-          <div className="group relative w-full max-w-md">
-            <div className="absolute -inset-1 rounded-[28px] bg-gradient-to-br from-indigo-500/30 via-purple-500/20 to-cyan-500/30 blur-2xl opacity-70 transition-opacity duration-300 group-hover:opacity-90" />
-            <div className="relative rounded-[28px] border bg-card/70 p-6 shadow-[0_22px_80px_-28px_rgba(0,0,0,0.35)] backdrop-blur-xl transition-transform duration-300 will-change-transform group-hover:[transform:perspective(1200px)_rotateX(2deg)_rotateY(-2deg)_translateY(-6px)]">
-              <div className="mb-6 space-y-1">
-                <h2 className="text-2xl font-semibold tracking-tight">시작하기</h2>
-                <p className="text-sm text-muted-foreground">이메일로 로그인하거나 새 계정을 생성하세요.</p>
-              </div>
+          <div className="relative rounded-[24px] border bg-card/75 p-6 shadow-[0_22px_80px_-28px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+            <div className="mb-4 space-y-1">
+              <h2 className="text-xl font-semibold tracking-tight">계정</h2>
+              <p className="text-xs text-muted-foreground">아이디(또는 이메일)와 비밀번호로 로그인/회원가입</p>
+            </div>
 
-              <Tabs value={mode} onValueChange={(v) => setMode(v as AuthMode)} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="signin">로그인</TabsTrigger>
-                  <TabsTrigger value="signup">회원가입</TabsTrigger>
-                </TabsList>
+            <Tabs value={mode} onValueChange={(v) => setMode(v as AuthMode)} className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">로그인</TabsTrigger>
+                <TabsTrigger value="signup">회원가입</TabsTrigger>
+              </TabsList>
 
-                <TabsContent value="signin" className="space-y-5">
-                  <form className="space-y-4" onSubmit={handleSubmit("signin")}>
+              <TabsContent value="signin" className="space-y-5">
+                <form className="space-y-4" onSubmit={handleSubmit("signin")}>
                     <div className="space-y-2">
                       <Label htmlFor="identifier">아이디 또는 이메일</Label>
                       <Input
@@ -214,8 +181,8 @@ export function LoginClient() {
                   </p>
                 </TabsContent>
 
-                <TabsContent value="signup" className="space-y-5">
-                  <form className="space-y-4" onSubmit={handleSubmit("signup")}>
+              <TabsContent value="signup" className="space-y-5">
+                <form className="space-y-4" onSubmit={handleSubmit("signup")}>
                     <div className="space-y-2">
                       <Label htmlFor="identifier_signup">아이디 또는 이메일</Label>
                       <Input
