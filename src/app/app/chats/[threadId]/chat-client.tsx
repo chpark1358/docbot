@@ -76,7 +76,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
 
   useEffect(() => {
     if (!scrollRef.current) return;
-    scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    scrollRef.current.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages.length]);
 
   const sendMessage = useCallback(
@@ -190,7 +190,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   }, [sendMessage, threadId]);
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-[calc(100vh-140px)] flex-col">
       <div ref={scrollRef} className="flex-1 overflow-auto px-4 py-8">
         <div className="mx-auto grid w-full max-w-5xl grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="flex flex-col gap-4">
