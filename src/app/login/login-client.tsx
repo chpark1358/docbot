@@ -11,6 +11,12 @@ import { createClient } from "@/lib/supabase/browser";
 
 type AuthMode = "signin" | "signup";
 
+const normalizeEmail = (raw: string) => {
+  const value = raw.trim().toLowerCase();
+  if (!value) return "";
+  return value.includes("@") ? value : `${value}@local.user`;
+};
+
 export function LoginClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -67,11 +73,17 @@ export function LoginClient() {
         }
       }
 
+      const email = normalizeEmail(identifier);
+      if (!email) {
+        setError("아이디(또는 이메일)를 입력해주세요.");
+        return;
+      }
+
       const { data, error: authError } =
         nextMode === "signin"
-          ? await supabase.auth.signInWithPassword({ email: identifier, password })
+          ? await supabase.auth.signInWithPassword({ email, password })
           : await supabase.auth.signUp({
-              email: identifier,
+              email,
               password,
               options: { data: { display_name: displayName || identifier } },
             });
@@ -275,7 +287,7 @@ export function LoginClient() {
                 </form>
 
                 <p className="text-center text-xs text-muted-foreground">
-                  회원가입 후 이메일 인증이 필요할 수 있습니다. 받은 메일을 확인해주세요.
+                  이메일이 없어도 아이디로 가입/로그인할 수 있습니다.
                 </p>
               </TabsContent>
             </Tabs>
