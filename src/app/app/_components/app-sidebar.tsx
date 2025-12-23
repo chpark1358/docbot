@@ -157,7 +157,7 @@ export function AppSidebar({ userEmail, threads }: Props) {
                 <div
                   key={t.id}
                   className={cn(
-                    "group flex items-center gap-3 rounded-xl border px-2 py-2 text-sm transition hover:bg-muted/60",
+                    "group/item relative flex items-center gap-3 rounded-xl border px-2 py-2 text-sm transition hover:bg-muted/60",
                     active ? "border-primary/30 bg-muted/70 shadow-sm" : "border-transparent",
                   )}
                 >
@@ -188,7 +188,7 @@ export function AppSidebar({ userEmail, threads }: Props) {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                      className="h-8 w-8 text-muted-foreground opacity-0 transition-opacity group-hover/item:opacity-100 focus:opacity-100"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();

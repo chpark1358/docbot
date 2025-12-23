@@ -34,12 +34,11 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
 
   const scrollToBottom = useCallback(() => {
-    const target = messagesRef.current ?? scrollRef.current;
+    const target = messagesRef.current;
     if (!target) return;
     target.scrollTo({ top: target.scrollHeight, behavior: "smooth" });
   }, []);
@@ -200,7 +199,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden">
         <div className="mx-auto grid h-full w-full max-w-5xl grid-cols-1 gap-6 px-4 pb-48 pt-6 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
             <div ref={messagesRef} className="flex-1 overflow-auto pr-1">
