@@ -36,19 +36,29 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
-  const lastUserIdRef = useRef<string | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
 
   const scrollToLastUserMessage = useCallback(() => {
-    const id = lastUserIdRef.current;
-    if (!id) return;
-    const el = document.getElementById(`msg-${id}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    const target = messagesRef.current;
+    if (target) {
+      target.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, []);
 
   const renderContent = (text: string) => {
+    const renderInline = (t: string) => {
+      const parts = t.split(/\*\*(.+?)\*\*/g);
+      return parts.map((part, idx) =>
+        idx % 2 === 1 ? (
+          <span key={idx} className="font-semibold text-slate-900">
+            {part}
+          </span>
+        ) : (
+          <span key={idx}>{part}</span>
+        ),
+      );
+    };
+
     const lines = text.split(/\n+/).filter((l) => l.trim() !== "");
     return (
       <div className="space-y-2">
@@ -71,13 +81,13 @@ export function ChatClient({ threadId, initialMessages }: Props) {
             return (
               <div key={idx} className="flex items-start gap-2 text-sm text-slate-800">
                 <span className="mt-1 block h-1.5 w-1.5 rounded-full bg-slate-400" />
-                <span className="leading-6">{line.slice(2)}</span>
+                <span className="leading-6">{renderInline(line.slice(2))}</span>
               </div>
             );
           }
           return (
             <p key={idx} className="text-sm text-slate-800 leading-6">
-              {line}
+              {renderInline(line)}
             </p>
           );
         })}
@@ -106,7 +116,6 @@ export function ChatClient({ threadId, initialMessages }: Props) {
         { id: userId, role: "user", content: question, created_at: new Date().toISOString() },
         { id: streamingId, role: "assistant", content: "", created_at: new Date().toISOString(), sources: [] },
       ]);
-      lastUserIdRef.current = userId;
       scrollToLastUserMessage();
 
       const updateAssistant = (content: string, sources?: Source[]) => {
