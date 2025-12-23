@@ -55,6 +55,37 @@ export function UploadForm({ onSuccess }: Props) {
 
   const fileKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`;
 
+  const requestUploadUrl = async (file: File) => {
+    const res = await fetch("/api/documents/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: file.name, fileSize: file.size, mimeType: file.type }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok || !data?.uploadUrl || !data?.path) {
+      throw new Error(data?.error ?? "업로드 URL 생성에 실패했습니다.");
+    }
+    return { uploadUrl: data.uploadUrl as string, path: data.path as string, mimeType: data.mimeType as string };
+  };
+
+  const ingestAfterUpload = async (file: File, path: string, mimeType: string) => {
+    const res = await fetch("/api/documents/ingest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        storagePath: path,
+        fileName: file.name,
+        mimeType: mimeType || file.type || "application/octet-stream",
+        size: file.size,
+      }),
+    });
+    const data = await res.json().catch(() => null);
+    if (!res.ok) {
+      throw new Error(data?.error ?? "처리에 실패했습니다.");
+    }
+    return data as UploadResult & { documentId?: string };
+  };
+
   const addFiles = (incoming: FileList | File[]) => {
     setError(null);
     setSuccess(null);
@@ -117,34 +148,27 @@ export function UploadForm({ onSuccess }: Props) {
         setProgress({ current: i + 1, total: files.length });
 
         try {
-          const formData = new FormData();
-          formData.append("file", file, file.name);
-
-          const res = await fetch("/api/documents/upload", {
-            method: "POST",
-            body: formData,
+          const { uploadUrl, path, mimeType } = await requestUploadUrl(file);
+          const put = await fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": mimeType || file.type || "application/octet-stream" },
+            body: file,
           });
-
-          const data = await res.json().catch(() => null);
-          if (!res.ok) {
-            uploadResults.push({
-              fileName: file.name,
-              status: "failed",
-              error: data?.error ?? "업로드에 실패했습니다.",
-              documentId: data?.documentId,
-            });
-            continue;
+          if (!put.ok) {
+            throw new Error("파일 업로드에 실패했습니다.");
           }
-
+          const ingestResult = await ingestAfterUpload(file, path, mimeType);
           const status: UploadResult["status"] =
-            data?.status === "ready" || data?.status === "queued" || data?.status === "failed" ? data.status : "unknown";
+            ingestResult?.status === "ready" || ingestResult?.status === "queued" || ingestResult?.status === "failed"
+              ? ingestResult.status
+              : "unknown";
 
           uploadResults.push({
             fileName: file.name,
             status,
-            message: data?.message,
-            documentId: data?.documentId,
-            error: data?.error,
+            message: ingestResult?.message,
+            documentId: ingestResult?.documentId,
+            error: ingestResult?.error,
           });
         } catch (err) {
           uploadResults.push({
