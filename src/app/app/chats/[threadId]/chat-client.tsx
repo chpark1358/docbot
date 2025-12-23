@@ -36,12 +36,15 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const lastUserIdRef = useRef<string | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
 
   const scrollToLastUserMessage = useCallback(() => {
-    const target = messagesRef.current;
-    if (target) {
-      target.scrollTo({ top: 0, behavior: "smooth" });
+    const id = lastUserIdRef.current;
+    if (!id) return;
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
     }
   }, []);
 
@@ -116,6 +119,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
         { id: userId, role: "user", content: question, created_at: new Date().toISOString() },
         { id: streamingId, role: "assistant", content: "", created_at: new Date().toISOString(), sources: [] },
       ]);
+      lastUserIdRef.current = userId;
       scrollToLastUserMessage();
 
       const updateAssistant = (content: string, sources?: Source[]) => {
@@ -231,7 +235,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               </div>
             ) : (
               messages.map((m) => (
-                <div key={m.id} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
+                <div key={m.id} id={`msg-${m.id}`} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                   <div
                     className={cn(
                       "max-w-[min(720px,100%)] rounded-2xl px-5 py-4 text-sm leading-6 shadow-sm",
