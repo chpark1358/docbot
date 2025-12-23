@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, MessageCircle, Plus, Search, Library, Sparkles, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Search, Library, Sparkles, Trash2, LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -108,6 +108,11 @@ export function AppSidebar({ userEmail, threads }: Props) {
           <Link href="/app/documents">
             <Button variant="ghost" className="w-full justify-start gap-2">
               <Library className="h-4 w-4" /> 문서 라이브러리
+            </Button>
+          </Link>
+          <Link href="/app/zendesk">
+            <Button variant="ghost" className="w-full justify-start gap-2">
+              <LifeBuoy className="h-4 w-4" /> Zendesk 요약
             </Button>
           </Link>
           {!collapsed ? (
