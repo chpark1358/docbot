@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
 
 type Mode = "org" | "requester";
 
@@ -68,10 +69,11 @@ export default function ZendeskPage() {
     setDownloading(true);
     setError(null);
     try {
+      const label = mode === "org" ? org || "all" : requester || "all";
       const res = await fetch("/api/zendesk/export-csv", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode, org, requester, status }),
+        body: JSON.stringify({ mode, org, requester, status, label }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -81,7 +83,8 @@ export default function ZendeskPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = "zendesk_tickets.csv";
+      const today = new Date().toISOString().slice(0, 10);
+      a.download = `zendesk_${label}_${today}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
@@ -197,53 +200,56 @@ export default function ZendeskPage() {
       ) : null}
 
       {items.length > 0 ? (
-        <ScrollArea className="h-[720px] rounded-xl border bg-card/30 p-4">
-          <div className="grid gap-2">
-            {items.map((item) => (
-              <div key={item.id} className="rounded-xl border bg-background/60 p-3 text-sm shadow-sm">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <div className="font-semibold">#{item.id}</div>
-                    <div className="text-xs text-muted-foreground">{String(item.status ?? "")}</div>
+        <ScrollArea className="h-[760px] rounded-2xl border bg-gradient-to-br from-white via-slate-50 to-slate-100 p-5 shadow-xl">
+          <div className="grid gap-3">
+            {items.map((item) => {
+              const created =
+                new Date(String(item.created_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-";
+              const updated =
+                new Date(String(item.updated_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-";
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    "rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm shadow-lg ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-xl",
+                  )}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-6 items-center rounded-full bg-indigo-50 px-3 text-xs font-semibold text-indigo-700">
+                          #{item.id}
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                          {String(item.status ?? "-")}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-base font-semibold text-slate-900">
+                        {String(item.subject ?? "(제목 없음)")}
+                      </div>
+                    </div>
+                    {item.ticket_url ? (
+                      <a
+                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 underline-offset-4 hover:bg-indigo-100 hover:underline"
+                        href={String(item.ticket_url)}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        티켓 열기 ↗
+                      </a>
+                    ) : null}
                   </div>
-                  {item.ticket_url ? (
-                    <a
-                      className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
-                      href={String(item.ticket_url)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      티켓 열기 ↗
-                    </a>
-                  ) : null}
+                  <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
+                    <div>요청자: {String(item.requester_name ?? "-")}</div>
+                    <div>담당자: {String(item.assignee_name ?? "-")}</div>
+                    <div>조직: {String(item.organization_name ?? "-")}</div>
+                    <div>
+                      생성: {created} / 업데이트: {updated} / 우선순위: {String(item.priority ?? "-")}
+                    </div>
+                  </div>
                 </div>
-                <div className="mt-1 text-sm">{String(item.subject ?? "(제목 없음)")}</div>
-                <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
-                  <div>
-                    요청자: {String(item.requester_name ?? item.requester_id ?? "-")}
-                  </div>
-                  <div>담당자: {String(item.assignee_name ?? item.assignee_id ?? "-")}</div>
-                  <div>조직: {String(item.organization_name ?? item.organization_id ?? "-")}</div>
-                  <div>
-                    생성: {new Date(String(item.created_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-"} / 업데이트:{" "}
-                    {new Date(String(item.updated_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-"} / 우선순위:{" "}
-                    {String(item.priority ?? "-")}
-                  </div>
-                </div>
-                {item.ticket_url ? (
-                  <div className="mt-2">
-                    <a
-                      className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
-                      href={String(item.ticket_url)}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      티켓 열기 ↗
-                    </a>
-                  </div>
-                ) : null}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </ScrollArea>
       ) : null}

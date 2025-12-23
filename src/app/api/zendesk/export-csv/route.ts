@@ -7,6 +7,7 @@ type SearchBody = {
   org?: string;
   requester?: string;
   status?: string;
+  label?: string;
 };
 
 const buildQuery = ({ mode, org, requester, status }: Required<SearchBody>): string => {
@@ -49,8 +50,11 @@ export async function POST(request: Request) {
   const org = (body.org ?? "").trim();
   const requester = (body.requester ?? "").trim();
   const status = (body.status ?? "").trim();
+  const labelRaw = (body.label ?? "").trim();
+  const label = labelRaw || (mode === "org" ? org || "all" : requester || "all");
+  const safeLabel = label.replace(/[^ㄱ-ㅎ가-힣a-zA-Z0-9_-]+/g, "_");
 
-  const query = buildQuery({ mode, org, requester, status });
+  const query = buildQuery({ mode, org, requester, status, label });
   const auth = Buffer.from(`${email}/token:${token}`).toString("base64");
   const url = `https://${subdomain}.zendesk.com/api/v2/search.json?query=${encodeURIComponent(query)}&per_page=200`;
 
@@ -146,16 +150,13 @@ export async function POST(request: Request) {
       });
 
     const headers = [
-      "id",
+      "ticket_id",
       "subject",
       "status",
       "priority",
-      "requester_name",
-      "requester_id",
-      "assignee_name",
-      "assignee_id",
-      "organization_name",
-      "organization_id",
+      "requester",
+      "assignee",
+      "organization",
       "created_at",
       "updated_at",
       "ticket_url",
@@ -166,12 +167,9 @@ export async function POST(request: Request) {
       i.subject,
       i.status,
       i.priority,
-      i.requester_name,
-      i.requester_id,
-      i.assignee_name,
-      i.assignee_id,
-      i.organization_name,
-      i.organization_id,
+      i.requester_name ?? "",
+      i.assignee_name ?? "",
+      i.organization_name ?? "",
       i.created_at,
       i.updated_at,
       i.ticket_url,
@@ -186,7 +184,7 @@ export async function POST(request: Request) {
       status: 200,
       headers: {
         "Content-Type": "text/csv; charset=utf-8",
-        "Content-Disposition": "attachment; filename=\"zendesk_tickets.csv\"",
+        "Content-Disposition": `attachment; filename="zendesk_${safeLabel}_${new Date().toISOString().slice(0, 10)}.csv"`,
       },
     });
   } catch (err) {
