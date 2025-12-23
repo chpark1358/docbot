@@ -192,7 +192,7 @@ export default function ZendeskPage() {
       <div className="flex flex-wrap gap-3">
         <Button onClick={handleSubmit}>요약 요청</Button>
         <Button variant="secondary" onClick={handleDownload} disabled={downloading}>
-          CSV 다운로드
+          엑셀 다운로드
         </Button>
         <Button
           variant="outline"
@@ -212,14 +212,16 @@ export default function ZendeskPage() {
       </div>
 
       {message ? (
-        <div className="rounded-lg border bg-card p-4 text-sm leading-6 text-muted-foreground whitespace-pre-wrap">{message}</div>
+        <div className="rounded-xl border border-slate-200 bg-white/90 p-4 text-sm leading-6 text-muted-foreground shadow-sm backdrop-blur">
+          {message}
+        </div>
       ) : null}
       {error ? (
-        <div className="rounded-lg border border-destructive/60 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>
+        <div className="rounded-xl border border-destructive/60 bg-destructive/10 p-4 text-sm text-destructive shadow-sm">{error}</div>
       ) : null}
 
       {items.length > 0 ? (
-        <ScrollArea className="h-[760px] rounded-2xl border bg-gradient-to-br from-white via-slate-50 to-slate-100 p-5 shadow-xl">
+        <ScrollArea className="h-[760px] rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-2xl">
           <div className="grid gap-3">
             {items.map((item) => {
               const created =
@@ -230,26 +232,26 @@ export default function ZendeskPage() {
                 <div
                   key={item.id}
                   className={cn(
-                    "rounded-2xl border border-slate-200 bg-white/80 p-4 text-sm shadow-lg ring-1 ring-slate-100 transition hover:-translate-y-0.5 hover:shadow-xl",
+                    "rounded-2xl border border-slate-200 bg-white/90 p-5 text-sm shadow-[0_18px_60px_-28px_rgba(0,0,0,0.25)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_24px_80px_-32px_rgba(0,0,0,0.30)]",
                   )}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex h-6 items-center rounded-full bg-indigo-50 px-3 text-xs font-semibold text-indigo-700">
+                        <span className="inline-flex h-6 items-center rounded-full border border-indigo-100 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 shadow-sm">
                           #{item.id}
                         </span>
-                        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
+                        <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
                           {statusToKo(item.status)}
                         </span>
                       </div>
-                      <div className="mt-1 text-base font-semibold text-slate-900">
+                      <div className="mt-1 text-base font-semibold text-slate-900 leading-tight">
                         {String(item.subject ?? "(제목 없음)")}
                       </div>
                     </div>
                     {item.ticket_url ? (
                       <a
-                        className="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 underline-offset-4 hover:bg-indigo-100 hover:underline"
+                        className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 underline-offset-4 shadow-sm hover:bg-indigo-100 hover:underline"
                         href={String(item.ticket_url)}
                         target="_blank"
                         rel="noreferrer"
