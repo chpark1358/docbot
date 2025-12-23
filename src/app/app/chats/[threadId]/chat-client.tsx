@@ -44,7 +44,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
     if (!id) return;
     const el = document.getElementById(`msg-${id}`);
     if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, []);
 
