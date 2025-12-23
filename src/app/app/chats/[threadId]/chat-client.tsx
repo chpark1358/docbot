@@ -35,12 +35,18 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
 
   const scrollToBottom = useCallback(() => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      return;
+    }
     const target = messagesRef.current;
-    if (!target) return;
-    target.scrollTo({ top: target.scrollHeight, behavior: "smooth" });
+    if (target) {
+      target.scrollTo({ top: target.scrollHeight, behavior: "smooth" });
+    }
   }, []);
 
   const renderContent = (text: string) => {
@@ -202,7 +208,11 @@ export function ChatClient({ threadId, initialMessages }: Props) {
       <div className="flex-1 overflow-hidden">
         <div className="mx-auto grid h-full w-full max-w-5xl grid-cols-1 gap-6 px-4 pb-48 pt-6 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
-            <div ref={messagesRef} className="flex-1 overflow-auto pr-1">
+            <div
+              ref={messagesRef}
+              className="flex-1 overflow-auto pr-1"
+              style={{ scrollBehavior: "smooth" }}
+            >
             {messages.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-2 py-24 text-center">
                 <div className="text-2xl font-semibold tracking-tight">무엇이든 물어보세요</div>
@@ -235,6 +245,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                 </div>
               </div>
             ) : null}
+            <div ref={bottomRef} />
           </div>
 
           {sidebarSources.length ? (
