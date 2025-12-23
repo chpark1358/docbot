@@ -73,7 +73,7 @@ export function AppSidebar({ userEmail, threads }: Props) {
   return (
     <aside
       className={cn(
-        "hidden shrink-0 border-r bg-background/70 backdrop-blur-xl transition-all lg:flex lg:flex-col",
+        "hidden h-screen shrink-0 border-r bg-background/70 backdrop-blur-xl transition-all lg:sticky lg:top-0 lg:flex lg:flex-col",
         collapsed ? "w-[68px]" : "w-[320px]",
       )}
     >
