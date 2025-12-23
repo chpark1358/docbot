@@ -6,6 +6,15 @@ import { processDocument } from "@/lib/process-document";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+// 늘어난 업로드 허용량(기본 4.5MB 한계를 넘기기 위함)
+// Vercel Node 함수 기준으로 적용됨
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: "40mb",
+    },
+  },
+};
 
 export async function POST(req: Request) {
   const supabase = await createClient();
