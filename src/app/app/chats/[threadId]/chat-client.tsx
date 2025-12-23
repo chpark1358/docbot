@@ -36,16 +36,15 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const lastUserIdRef = useRef<string | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
 
-  const scrollToBottom = useCallback(() => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
-      return;
-    }
-    const target = messagesRef.current;
-    if (target) {
-      target.scrollTo({ top: target.scrollHeight, behavior: "smooth" });
+  const scrollToLastUserMessage = useCallback(() => {
+    const id = lastUserIdRef.current;
+    if (!id) return;
+    const el = document.getElementById(`msg-${id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, []);
 
@@ -87,17 +86,9 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => scrollToBottom(), 0);
+    const timer = setTimeout(() => scrollToLastUserMessage(), 0);
     return () => clearTimeout(timer);
-  }, [messages.length, scrollToBottom]);
-
-  useEffect(() => {
-    if (!isLoading) {
-      const t = setTimeout(() => scrollToBottom(), 30);
-      return () => clearTimeout(t);
-    }
-    return undefined;
-  }, [isLoading, scrollToBottom]);
+  }, [messages.length, scrollToLastUserMessage]);
 
   const sendMessage = useCallback(
     async (override?: string) => {
@@ -107,19 +98,16 @@ export function ChatClient({ threadId, initialMessages }: Props) {
       setError(null);
       setIsLoading(true);
 
-      setMessages((prev) => [
-        ...prev,
-        { id: crypto.randomUUID(), role: "user", content: question, created_at: new Date().toISOString() },
-      ]);
-
-      // streaming
-      let acc = "";
+      const userId = crypto.randomUUID();
       const streamingId = crypto.randomUUID();
+
       setMessages((prev) => [
         ...prev,
+        { id: userId, role: "user", content: question, created_at: new Date().toISOString() },
         { id: streamingId, role: "assistant", content: "", created_at: new Date().toISOString(), sources: [] },
       ]);
-      scrollToBottom();
+      lastUserIdRef.current = userId;
+      scrollToLastUserMessage();
 
       const updateAssistant = (content: string, sources?: Source[]) => {
         setMessages((prev) =>
@@ -129,8 +117,6 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               : m,
           ),
         );
-        requestAnimationFrame(scrollToBottom);
-        setTimeout(scrollToBottom, 30);
       };
 
       try {
