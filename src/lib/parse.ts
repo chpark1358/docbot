@@ -12,10 +12,11 @@ type MammothModule = { extractRawText: (input: { buffer: Buffer }) => Promise<{ 
 let pdfWorkerSetupPromise: Promise<void> | null = null;
 
 const ensurePdfPolyfills = () => {
+  // pdfjs가 Node에서 필요로 하는 최소 전역을 스텁으로 정의
   const g = globalThis as Record<string, unknown>;
   if (typeof g.DOMMatrix === "undefined") {
+    // eslint-disable-next-line @typescript-eslint/no-extraneous-class
     g.DOMMatrix = class {
-      // minimal stub for pdfjs
       constructor(_init?: unknown) {}
     } as unknown;
   }
@@ -26,8 +27,15 @@ const ensurePdfPolyfills = () => {
   }
   if (typeof g.ImageData === "undefined") {
     g.ImageData = class {
+      // Node 환경에서는 실제 픽셀 조작이 필요 없으므로 빈 스텁
       constructor(_data?: unknown, _w?: number, _h?: number) {}
     } as unknown;
+  }
+  if (typeof g.CanvasRenderingContext2D === "undefined") {
+    g.CanvasRenderingContext2D = class {} as unknown;
+  }
+  if (typeof g.HTMLCanvasElement === "undefined") {
+    g.HTMLCanvasElement = class {} as unknown;
   }
 };
 
