@@ -189,8 +189,8 @@ export async function POST(request: Request) {
       i.requester_name ?? "",
       i.assignee_name ?? "",
       i.organization_name ?? "",
-      i.created_at,
-      i.updated_at,
+      i.created_at ? new Date(String(i.created_at)).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "",
+      i.updated_at ? new Date(String(i.updated_at)).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "",
       i.ticket_url,
     ]);
 
