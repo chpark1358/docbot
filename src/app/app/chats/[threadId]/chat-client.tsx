@@ -35,16 +35,17 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const messagesRef = useRef<HTMLDivElement | null>(null);
-  const bottomRef = useRef<HTMLDivElement | null>(null);
   const lastUserIdRef = useRef<string | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
 
   const scrollToLastUserMessage = useCallback(() => {
     const id = lastUserIdRef.current;
     if (!id) return;
+    const container = messagesRef.current;
     const el = document.getElementById(`msg-${id}`);
-    if (el) {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (container && el) {
+      const top = el.offsetTop - container.offsetTop - 16; // small padding
+      container.scrollTo({ top, behavior: "smooth" });
     }
   }, []);
 
@@ -258,7 +259,6 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                 </div>
               </div>
             ) : null}
-            <div ref={bottomRef} />
           </div>
 
           {sidebarSources.length ? (
