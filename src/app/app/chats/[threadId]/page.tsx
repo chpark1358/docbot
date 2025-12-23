@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { FileText, Globe, Library } from "lucide-react";
+import { FileText, Globe, Library, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { isVirtualChatDocument } from "@/lib/virtual-chat";
@@ -75,6 +75,22 @@ export default async function ChatThreadPage({ params }: Params) {
                 <Library className="h-4 w-4" /> 문서 라이브러리
               </Button>
             </Link>
+            <form
+              action={`/api/chat/threads/${threadId}`}
+              method="post"
+              onSubmit={(e) => {
+                // degrade gracefully; server will handle
+              }}
+            >
+              <input type="hidden" name="_method" value="DELETE" />
+              <Button variant="ghost" size="sm" className="gap-2 text-destructive hover:text-destructive" formMethod="post" onClick={(e) => {
+                if (!confirm("이 대화를 삭제하시겠습니까?")) {
+                  e.preventDefault();
+                }
+              }}>
+                <Trash2 className="h-4 w-4" /> 삭제
+              </Button>
+            </form>
           </div>
         </div>
       </div>
