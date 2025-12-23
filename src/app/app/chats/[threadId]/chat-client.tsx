@@ -91,6 +91,14 @@ export function ChatClient({ threadId, initialMessages }: Props) {
     return () => clearTimeout(timer);
   }, [messages.length, scrollToBottom]);
 
+  useEffect(() => {
+    if (!isLoading) {
+      const t = setTimeout(() => scrollToBottom(), 30);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [isLoading, scrollToBottom]);
+
   const sendMessage = useCallback(
     async (override?: string) => {
       const question = (override ?? input).trim();
@@ -122,6 +130,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
           ),
         );
         requestAnimationFrame(scrollToBottom);
+        setTimeout(scrollToBottom, 30);
       };
 
       try {
