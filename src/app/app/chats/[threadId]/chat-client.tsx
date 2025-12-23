@@ -222,8 +222,8 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               className="flex-1 overflow-auto pr-1"
               style={{
                 scrollBehavior: "smooth",
-                paddingBottom: "200px",
-                maxHeight: "calc(100vh - 220px)",
+                paddingBottom: "96px",
+                maxHeight: "calc(100vh - 200px)",
               }}
             >
             {messages.length === 0 ? (
