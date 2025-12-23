@@ -225,7 +225,8 @@ export default function ZendeskPage() {
                   <div>담당자: {String(item.assignee_name ?? item.assignee_id ?? "-")}</div>
                   <div>조직: {String(item.organization_name ?? item.organization_id ?? "-")}</div>
                   <div>
-                    생성: {String(item.created_at ?? "-")} / 업데이트: {String(item.updated_at ?? "-")} / 우선순위:{" "}
+                    생성: {new Date(String(item.created_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-"} / 업데이트:{" "}
+                    {new Date(String(item.updated_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-"} / 우선순위:{" "}
                     {String(item.priority ?? "-")}
                   </div>
                 </div>
