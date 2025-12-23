@@ -11,6 +11,26 @@ type MammothModule = { extractRawText: (input: { buffer: Buffer }) => Promise<{ 
 
 let pdfWorkerSetupPromise: Promise<void> | null = null;
 
+const ensurePdfPolyfills = () => {
+  const g = globalThis as Record<string, unknown>;
+  if (typeof g.DOMMatrix === "undefined") {
+    g.DOMMatrix = class {
+      // minimal stub for pdfjs
+      constructor(_init?: unknown) {}
+    } as unknown;
+  }
+  if (typeof g.Path2D === "undefined") {
+    g.Path2D = class {
+      constructor(_path?: string) {}
+    } as unknown;
+  }
+  if (typeof g.ImageData === "undefined") {
+    g.ImageData = class {
+      constructor(_data?: unknown, _w?: number, _h?: number) {}
+    } as unknown;
+  }
+};
+
 const ensurePdfWorkerSetup = async (PDFParse: unknown): Promise<void> => {
   if (pdfWorkerSetupPromise) return pdfWorkerSetupPromise;
 
@@ -56,6 +76,7 @@ export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promi
       // Current API: named export PDFParse (class)
       const PDFParse = pdfModule.PDFParse;
       if (typeof PDFParse === "function") {
+        ensurePdfPolyfills();
         await ensurePdfWorkerSetup(PDFParse);
 
         const parser = new (PDFParse as new (options: { data: Buffer }) => {
