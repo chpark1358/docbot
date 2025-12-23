@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, MessageCircle, MoreVertical, Plus, Search, Library, Sparkles, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Search, Library, Sparkles, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -185,33 +185,19 @@ export function AppSidebar({ userEmail, threads }: Props) {
                     ) : null}
                   </Link>
                   {!collapsed ? (
-                    <div className="relative">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
-                        title="메뉴"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }}
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                      <div className="absolute right-0 top-9 z-20 hidden min-w-[120px] rounded-lg border bg-popover p-1 text-sm shadow-md group-hover:block">
-                        <button
-                          type="button"
-                          className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-destructive hover:bg-destructive/10"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            void handleDelete(t.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" /> 삭제
-                        </button>
-                      </div>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void handleDelete(t.id);
+                      }}
+                      title="채팅 삭제"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   ) : null}
                 </div>
               );
