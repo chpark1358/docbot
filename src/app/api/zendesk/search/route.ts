@@ -78,6 +78,7 @@ export async function POST(request: Request) {
         requester_id: r.requester_id,
         organization_id: r.organization_id,
         tags: r.tags,
+        ticket_url: r.id ? `https://${subdomain}.zendesk.com/agent/tickets/${r.id}` : undefined,
       })) ?? [];
 
     // --- 추가: 사용자/조직 이름 조회 (show_many) ---

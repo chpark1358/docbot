@@ -30,6 +30,7 @@ export default function ZendeskPage() {
       requester_name?: unknown;
       assignee_name?: unknown;
       organization_name?: unknown;
+      ticket_url?: unknown;
     }>
   >([]);
 
@@ -67,8 +68,8 @@ export default function ZendeskPage() {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Zendesk</p>
         <h1 className="text-2xl font-semibold tracking-tight">티켓 요약/내보내기 (프리셋)</h1>
         <p className="text-sm text-muted-foreground">
-          조직 또는 요청자 기준으로 티켓을 조회하고 요약/CSV 내보내기를 실행할 수 있는 메뉴입니다. 현재는 UI만 제공하며,
-          실제 Zendesk API 연동은 이후 연결합니다.
+          조직 또는 요청자 기준으로 티켓을 조회하고 요약/CSV 내보내기를 실행할 수 있는 메뉴입니다. Zendesk API와 연동되어
+          검색 결과를 바로 확인할 수 있습니다.
         </p>
       </div>
 
@@ -163,7 +164,7 @@ export default function ZendeskPage() {
       ) : null}
 
       {items.length > 0 ? (
-        <ScrollArea className="h-[480px] rounded-xl border bg-card/30 p-3">
+        <ScrollArea className="h-[620px] rounded-xl border bg-card/30 p-4">
           <div className="grid gap-2">
             {items.map((item) => (
               <div key={item.id} className="rounded-xl border bg-background/60 p-3 text-sm shadow-sm">
@@ -183,6 +184,18 @@ export default function ZendeskPage() {
                     {String(item.priority ?? "-")}
                   </div>
                 </div>
+                {item.ticket_url ? (
+                  <div className="mt-2">
+                    <a
+                      className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+                      href={String(item.ticket_url)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      티켓 열기 ↗
+                    </a>
+                  </div>
+                ) : null}
               </div>
             ))}
           </div>
