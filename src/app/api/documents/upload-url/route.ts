@@ -46,7 +46,7 @@ export async function POST(req: Request) {
   const service = createServiceClient();
   const { data: signed, error } = await service.storage
     .from(STORAGE_BUCKET)
-    .createSignedUploadUrl(objectPath, 60 * 10);
+    .createSignedUploadUrl(objectPath, { upsert: false });
 
   if (error || !signed?.signedUrl) {
     return NextResponse.json({ error: error?.message ?? "업로드 URL 생성에 실패했습니다." }, { status: 500 });
