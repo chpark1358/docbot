@@ -89,25 +89,25 @@ export default function ZendeskPage() {
     setError(null);
     try {
       const label = mode === "org" ? org || "all" : requester || "all";
-      const res = await fetch("/api/zendesk/export-csv", {
+      const res = await fetch("/api/zendesk/export-xlsx", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ mode, org, requester, status, label }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        throw new Error(data?.error ?? `CSV 다운로드 실패: ${res.status}`);
+        throw new Error(data?.error ?? `다운로드 실패: ${res.status}`);
       }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       const today = new Date().toISOString().slice(0, 10);
-      a.download = `zendesk_${label}_${today}.csv`;
+      a.download = `zendesk_${label}_${today}.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "CSV 생성 중 오류가 발생했습니다.");
+      setError(err instanceof Error ? err.message : "파일 생성 중 오류가 발생했습니다.");
     } finally {
       setDownloading(false);
     }
