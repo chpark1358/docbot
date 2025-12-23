@@ -44,6 +44,7 @@ export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promi
 
   switch (kind) {
     case "pdf": {
+      ensurePdfDomStubs(); // pdf-parse import 시점에 DOM 의존성을 만족시키기 위해 선행
       const pdfModule = (await import("pdf-parse")) as unknown as Record<string, unknown>;
 
       // pdf-parse의 기본 함수만 사용하여 canvas/DOM 의존성을 제거
@@ -51,7 +52,6 @@ export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promi
       if (typeof parseFn !== "function") {
         throw new Error("pdf-parse 기본 함수를 찾을 수 없습니다.");
       }
-      ensurePdfDomStubs();
       const result = await (parseFn as (data: Buffer) => Promise<{ text?: string }>)(buffer);
       return result.text ?? "";
     }
