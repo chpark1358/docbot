@@ -234,7 +234,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                 </p>
               </div>
             ) : (
-              messages.map((m) => (
+              [...messages].reverse().map((m) => (
                 <div key={m.id} id={`msg-${m.id}`} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
                   <div
                     className={cn(
