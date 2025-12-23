@@ -184,21 +184,19 @@ export function AppSidebar({ userEmail, threads }: Props) {
                       </div>
                     ) : null}
                   </Link>
-                  {!collapsed ? (
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 border-destructive/40 text-destructive"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        void handleDelete(t.id);
-                      }}
-                      title="채팅 삭제"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  ) : null}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void handleDelete(t.id);
+                    }}
+                    title="채팅 삭제"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               );
             })

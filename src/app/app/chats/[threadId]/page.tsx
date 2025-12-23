@@ -55,7 +55,7 @@ export default async function ChatThreadPage({ params }: Params) {
     .order("created_at", { ascending: true });
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-screen flex-col overflow-hidden">
       <div className="border-b bg-background/70 backdrop-blur">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
