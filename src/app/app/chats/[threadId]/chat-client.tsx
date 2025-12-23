@@ -120,6 +120,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
       };
 
       try {
+        let acc = "";
         const res = await fetch("/api/chat?stream=1", {
           method: "POST",
           headers: {
