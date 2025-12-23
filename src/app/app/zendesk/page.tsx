@@ -4,8 +4,6 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Mode = "org" | "requester";
 
@@ -35,14 +33,29 @@ export default function ZendeskPage() {
         </p>
       </div>
 
-      <Tabs value={mode} onValueChange={(v) => setMode(v as Mode)} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="org">조직 기준</TabsTrigger>
-          <TabsTrigger value="requester">요청자 기준</TabsTrigger>
-        </TabsList>
+      <div className="grid w-full gap-3 rounded-2xl border bg-card/50 p-4 shadow-sm">
+        <div className="grid gap-2">
+          <Label>조회 기준</Label>
+          <div className="flex gap-3 text-sm">
+            <label className="flex items-center gap-2">
+              <input type="radio" name="mode" value="org" checked={mode === "org"} onChange={() => setMode("org")} />
+              조직 기준
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="mode"
+                value="requester"
+                checked={mode === "requester"}
+                onChange={() => setMode("requester")}
+              />
+              요청자 기준
+            </label>
+          </div>
+        </div>
 
-        <TabsContent value="org" className="space-y-4">
-          <div className="space-y-2">
+        {mode === "org" ? (
+          <div className="grid gap-2">
             <Label htmlFor="org">조직명 (부분 매치는 * 사용)</Label>
             <Input
               id="org"
@@ -52,10 +65,8 @@ export default function ZendeskPage() {
             />
             <p className="text-xs text-muted-foreground">미입력 시 조직 필터 없이 조회합니다.</p>
           </div>
-        </TabsContent>
-
-        <TabsContent value="requester" className="space-y-4">
-          <div className="space-y-2">
+        ) : (
+          <div className="grid gap-2">
             <Label htmlFor="requester">요청자 (이메일 또는 이름)</Label>
             <Input
               id="requester"
@@ -65,25 +76,25 @@ export default function ZendeskPage() {
             />
             <p className="text-xs text-muted-foreground">미입력 시 요청자 필터 없이 조회합니다.</p>
           </div>
-        </TabsContent>
-      </Tabs>
+        )}
+      </div>
 
       <div className="space-y-2">
         <Label htmlFor="status">상태 필터</Label>
-        <Select value={status} onValueChange={(v) => setStatus(v)}>
-          <SelectTrigger id="status">
-            <SelectValue placeholder="상태를 선택하세요" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">전체</SelectItem>
-            <SelectItem value="status<closed">미해결 (닫힘 제외)</SelectItem>
-            <SelectItem value="status<solved">진행중/대기 (해결/닫힘 제외)</SelectItem>
-            <SelectItem value="status:open">열림만</SelectItem>
-            <SelectItem value="status:pending">보류만</SelectItem>
-            <SelectItem value="status:solved">해결됨</SelectItem>
-            <SelectItem value="status:closed">닫힘</SelectItem>
-          </SelectContent>
-        </Select>
+        <select
+          id="status"
+          className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+          value={status}
+          onChange={(e) => setStatus(e.target.value)}
+        >
+          <option value="">전체</option>
+          <option value="status<closed">미해결 (닫힘 제외)</option>
+          <option value="status<solved">진행중/대기 (해결/닫힘 제외)</option>
+          <option value="status:open">열림만</option>
+          <option value="status:pending">보류만</option>
+          <option value="status:solved">해결됨</option>
+          <option value="status:closed">닫힘</option>
+        </select>
         <p className="text-xs text-muted-foreground">필요하면 검색 후 상태를 추가로 수정해 사용하세요.</p>
       </div>
 
