@@ -30,6 +30,25 @@ const quote = (value: unknown) => {
   return s;
 };
 
+const statusLabel = (s: unknown) => {
+  switch (String(s || "").toLowerCase()) {
+    case "new":
+      return "신규";
+    case "open":
+      return "열림";
+    case "pending":
+      return "대기";
+    case "hold":
+      return "보류";
+    case "solved":
+      return "해결";
+    case "closed":
+      return "닫힘";
+    default:
+      return String(s || "");
+  }
+};
+
 export async function POST(request: Request) {
   const subdomain = process.env.ZENDESK_SUBDOMAIN;
   const email = process.env.ZENDESK_EMAIL;
@@ -52,7 +71,7 @@ export async function POST(request: Request) {
   const status = (body.status ?? "").trim();
   const labelRaw = (body.label ?? "").trim();
   const label = labelRaw || (mode === "org" ? org || "all" : requester || "all");
-  const safeLabel = label.replace(/[^ㄱ-ㅎ가-힣a-zA-Z0-9_-]+/g, "_");
+  const safeLabel = label.replace(/[^a-zA-Z0-9_-]+/g, "_") || "all";
 
   const query = buildQuery({ mode, org, requester, status, label });
   const auth = Buffer.from(`${email}/token:${token}`).toString("base64");
@@ -165,7 +184,7 @@ export async function POST(request: Request) {
     const rows = enriched.map((i) => [
       i.id,
       i.subject,
-      i.status,
+      statusLabel(i.status),
       i.priority,
       i.requester_name ?? "",
       i.assignee_name ?? "",

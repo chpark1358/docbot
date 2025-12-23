@@ -36,6 +36,25 @@ export default function ZendeskPage() {
     }>
   >([]);
 
+  const statusToKo = (s: unknown) => {
+    switch (String(s || "").toLowerCase()) {
+      case "new":
+        return "신규";
+      case "open":
+        return "열림";
+      case "pending":
+        return "대기";
+      case "hold":
+        return "보류";
+      case "solved":
+        return "해결";
+      case "closed":
+        return "닫힘";
+      default:
+        return String(s || "");
+    }
+  };
+
   const handleSubmit = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -221,7 +240,7 @@ export default function ZendeskPage() {
                           #{item.id}
                         </span>
                         <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600">
-                          {String(item.status ?? "-")}
+                          {statusToKo(item.status)}
                         </span>
                       </div>
                       <div className="mt-1 text-base font-semibold text-slate-900">
