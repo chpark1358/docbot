@@ -57,8 +57,8 @@ export default async function ChatThreadPage({ params }: Params) {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
-      <div className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="sticky top-0 z-30 border-b bg-background/90 backdrop-blur shadow-sm">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
               {virtualChat ? <Globe className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
