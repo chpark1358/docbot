@@ -206,12 +206,16 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
       <div className="flex-1 overflow-hidden">
-        <div className="mx-auto grid h-full w-full max-w-5xl grid-cols-1 gap-6 px-4 pb-56 pt-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div className="mx-auto grid h-full w-full max-w-5xl grid-cols-1 gap-6 px-4 pb-64 pt-6 lg:grid-cols-[minmax(0,1fr)_280px]">
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
             <div
               ref={messagesRef}
               className="flex-1 overflow-auto pr-1"
-              style={{ scrollBehavior: "smooth", paddingBottom: "16px" }}
+              style={{
+                scrollBehavior: "smooth",
+                paddingBottom: "200px",
+                maxHeight: "calc(100vh - 220px)",
+              }}
             >
             {messages.length === 0 ? (
               <div className="flex flex-1 flex-col items-center justify-center gap-2 py-24 text-center">
