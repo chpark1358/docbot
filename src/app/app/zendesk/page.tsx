@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type Mode = "org" | "requester";
 
@@ -26,6 +27,9 @@ export default function ZendeskPage() {
       assignee_id?: unknown;
       requester_id?: unknown;
       organization_id?: unknown;
+      requester_name?: unknown;
+      assignee_name?: unknown;
+      organization_name?: unknown;
     }>
   >([]);
 
@@ -159,26 +163,30 @@ export default function ZendeskPage() {
       ) : null}
 
       {items.length > 0 ? (
-        <div className="grid gap-2">
-          {items.map((item) => (
-            <div key={item.id} className="rounded-xl border bg-background/60 p-3 text-sm shadow-sm">
-              <div className="flex items-center justify-between gap-2">
-                <div className="font-semibold">#{item.id}</div>
-                <div className="text-xs text-muted-foreground">{String(item.status ?? "")}</div>
-              </div>
-              <div className="mt-1 text-sm">{String(item.subject ?? "(제목 없음)")}</div>
-              <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
-                <div>요청자: {String(item.requester_id ?? "-")}</div>
-                <div>담당자: {String(item.assignee_id ?? "-")}</div>
-                <div>조직: {String(item.organization_id ?? "-")}</div>
-                <div>
-                  생성: {String(item.created_at ?? "-")} / 업데이트: {String(item.updated_at ?? "-")} / 우선순위:{" "}
-                  {String(item.priority ?? "-")}
+        <ScrollArea className="h-[480px] rounded-xl border bg-card/30 p-3">
+          <div className="grid gap-2">
+            {items.map((item) => (
+              <div key={item.id} className="rounded-xl border bg-background/60 p-3 text-sm shadow-sm">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="font-semibold">#{item.id}</div>
+                  <div className="text-xs text-muted-foreground">{String(item.status ?? "")}</div>
+                </div>
+                <div className="mt-1 text-sm">{String(item.subject ?? "(제목 없음)")}</div>
+                <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
+                  <div>
+                    요청자: {String(item.requester_name ?? item.requester_id ?? "-")}
+                  </div>
+                  <div>담당자: {String(item.assignee_name ?? item.assignee_id ?? "-")}</div>
+                  <div>조직: {String(item.organization_name ?? item.organization_id ?? "-")}</div>
+                  <div>
+                    생성: {String(item.created_at ?? "-")} / 업데이트: {String(item.updated_at ?? "-")} / 우선순위:{" "}
+                    {String(item.priority ?? "-")}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </ScrollArea>
       ) : null}
     </div>
   );
