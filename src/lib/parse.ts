@@ -37,6 +37,9 @@ const ensurePdfPolyfills = () => {
   if (typeof g.HTMLCanvasElement === "undefined") {
     g.HTMLCanvasElement = class {} as unknown;
   }
+  if (typeof g.Image === "undefined") {
+    g.Image = class {} as unknown;
+  }
 };
 
 const ensurePdfWorkerSetup = async (PDFParse: unknown): Promise<void> => {
