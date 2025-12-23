@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,14 +13,49 @@ export default function ZendeskPage() {
   const [requester, setRequester] = useState("");
   const [status, setStatus] = useState("status<closed");
   const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [items, setItems] = useState<
+    Array<{
+      id: number | string;
+      subject?: unknown;
+      status?: unknown;
+      priority?: unknown;
+      created_at?: unknown;
+      updated_at?: unknown;
+      assignee_id?: unknown;
+      requester_id?: unknown;
+      organization_id?: unknown;
+    }>
+  >([]);
 
-  const handleSubmit = () => {
-    const payload =
-      mode === "org"
-        ? `조직: ${org || "(미입력)"}, 상태: ${status || "전체"}`
-        : `요청자: ${requester || "(미입력)"}, 상태: ${status || "전체"}`;
-    setMessage(`요청이 준비되었습니다. (샘플) ${payload}\n※ 실제 Zendesk API 연동은 이후 추가가 필요합니다.`);
-  };
+  const handleSubmit = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+    setItems([]);
+
+    try {
+      const res = await fetch("/api/zendesk/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, org, requester, status }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? `요청 실패: ${res.status}`);
+      }
+
+      const data = (await res.json()) as { count: number; query: string; items: typeof items };
+      setItems(data.items);
+      setMessage(`검색 완료 (${data.count}건). 쿼리: ${data.query}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "요청 중 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }, [mode, org, requester, status]);
 
   return (
     <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 px-6 py-8">
@@ -107,15 +142,42 @@ export default function ZendeskPage() {
             setRequester("");
             setStatus("status<closed");
             setMessage(null);
+            setItems([]);
+            setError(null);
           }}
         >
           초기화
         </Button>
+        {loading ? <span className="text-sm text-muted-foreground">불러오는 중...</span> : null}
       </div>
 
       {message ? (
-        <div className="rounded-lg border bg-card p-4 text-sm leading-6 text-muted-foreground whitespace-pre-wrap">
-          {message}
+        <div className="rounded-lg border bg-card p-4 text-sm leading-6 text-muted-foreground whitespace-pre-wrap">{message}</div>
+      ) : null}
+      {error ? (
+        <div className="rounded-lg border border-destructive/60 bg-destructive/10 p-4 text-sm text-destructive">{error}</div>
+      ) : null}
+
+      {items.length > 0 ? (
+        <div className="grid gap-2">
+          {items.map((item) => (
+            <div key={item.id} className="rounded-xl border bg-background/60 p-3 text-sm shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <div className="font-semibold">#{item.id}</div>
+                <div className="text-xs text-muted-foreground">{String(item.status ?? "")}</div>
+              </div>
+              <div className="mt-1 text-sm">{String(item.subject ?? "(제목 없음)")}</div>
+              <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
+                <div>요청자: {String(item.requester_id ?? "-")}</div>
+                <div>담당자: {String(item.assignee_id ?? "-")}</div>
+                <div>조직: {String(item.organization_id ?? "-")}</div>
+                <div>
+                  생성: {String(item.created_at ?? "-")} / 업데이트: {String(item.updated_at ?? "-")} / 우선순위:{" "}
+                  {String(item.priority ?? "-")}
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       ) : null}
     </div>
