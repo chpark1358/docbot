@@ -16,6 +16,7 @@ export default function ZendeskPage() {
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
   const [items, setItems] = useState<
     Array<{
       id: number | string;
@@ -62,8 +63,36 @@ export default function ZendeskPage() {
     }
   }, [mode, org, requester, status]);
 
+  const handleDownload = useCallback(async () => {
+    if (downloading) return;
+    setDownloading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/zendesk/export-csv", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode, org, requester, status }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? `CSV 다운로드 실패: ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "zendesk_tickets.csv";
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "CSV 생성 중 오류가 발생했습니다.");
+    } finally {
+      setDownloading(false);
+    }
+  }, [downloading, mode, org, requester, status]);
+
   return (
-    <div className="mx-auto flex h-full max-w-4xl flex-col gap-6 px-6 py-8">
+    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 px-6 py-8">
       <div className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Zendesk</p>
         <h1 className="text-2xl font-semibold tracking-tight">티켓 요약/내보내기 (프리셋)</h1>
@@ -140,6 +169,9 @@ export default function ZendeskPage() {
 
       <div className="flex flex-wrap gap-3">
         <Button onClick={handleSubmit}>요약 요청</Button>
+        <Button variant="secondary" onClick={handleDownload} disabled={downloading}>
+          CSV 다운로드
+        </Button>
         <Button
           variant="outline"
           onClick={() => {
@@ -154,6 +186,7 @@ export default function ZendeskPage() {
           초기화
         </Button>
         {loading ? <span className="text-sm text-muted-foreground">불러오는 중...</span> : null}
+        {downloading ? <span className="text-sm text-muted-foreground">CSV 생성 중...</span> : null}
       </div>
 
       {message ? (
@@ -164,13 +197,25 @@ export default function ZendeskPage() {
       ) : null}
 
       {items.length > 0 ? (
-        <ScrollArea className="h-[620px] rounded-xl border bg-card/30 p-4">
+        <ScrollArea className="h-[720px] rounded-xl border bg-card/30 p-4">
           <div className="grid gap-2">
             {items.map((item) => (
               <div key={item.id} className="rounded-xl border bg-background/60 p-3 text-sm shadow-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="font-semibold">#{item.id}</div>
-                  <div className="text-xs text-muted-foreground">{String(item.status ?? "")}</div>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="font-semibold">#{item.id}</div>
+                    <div className="text-xs text-muted-foreground">{String(item.status ?? "")}</div>
+                  </div>
+                  {item.ticket_url ? (
+                    <a
+                      className="inline-flex items-center gap-1 text-xs font-medium text-primary underline-offset-4 hover:underline"
+                      href={String(item.ticket_url)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      티켓 열기 ↗
+                    </a>
+                  ) : null}
                 </div>
                 <div className="mt-1 text-sm">{String(item.subject ?? "(제목 없음)")}</div>
                 <div className="mt-2 grid gap-1 text-xs text-muted-foreground">
