@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type Mode = "org" | "requester";
 
@@ -69,13 +76,21 @@ export default function ZendeskPage() {
 
       <div className="space-y-2">
         <Label htmlFor="status">상태 필터</Label>
-        <Input
-          id="status"
-          placeholder="예: status<closed (비우면 전체)"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        />
-        <p className="text-xs text-muted-foreground">Zendesk Search 쿼리 형식 사용. 비워두면 전체 상태를 조회합니다.</p>
+        <Select value={status} onValueChange={(v) => setStatus(v)}>
+          <SelectTrigger id="status">
+            <SelectValue placeholder="상태를 선택하세요" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">전체</SelectItem>
+            <SelectItem value="status<closed">미해결 (닫힘 제외)</SelectItem>
+            <SelectItem value="status<solved">진행중/대기 (해결/닫힘 제외)</SelectItem>
+            <SelectItem value="status:open">열림만</SelectItem>
+            <SelectItem value="status:pending">보류만</SelectItem>
+            <SelectItem value="status:solved">해결됨</SelectItem>
+            <SelectItem value="status:closed">닫힘</SelectItem>
+          </SelectContent>
+        </Select>
+        <p className="text-xs text-muted-foreground">필요하면 검색 후 상태를 추가로 수정해 사용하세요.</p>
       </div>
 
       <div className="flex flex-wrap gap-3">
