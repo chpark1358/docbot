@@ -7,6 +7,7 @@ import { FileText, Loader2, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } from "@/lib/constants";
 
 type Props = {
   onSuccess?: () => void;
@@ -94,35 +95,34 @@ export function UploadForm({ onSuccess }: Props) {
     const incomingFiles = Array.from(incoming);
     if (!incomingFiles.length) return 0;
 
-    let exceeded = false;
-    let added = 0;
+    const filtered: File[] = [];
+    const errors: string[] = [];
 
-    setFiles((prev) => {
-      const keys = new Set(prev.map(fileKey));
-      const next = [...prev];
-
-      for (const file of incomingFiles) {
-        const key = fileKey(file);
-        if (keys.has(key)) continue;
-        if (next.length >= MAX_FILES) {
-          exceeded = true;
-          continue;
-        }
-        next.push(file);
-        keys.add(key);
-        added += 1;
+    for (const file of incomingFiles) {
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        errors.push(`${file.name}: ${(file.size / (1024 * 1024)).toFixed(1)}MB (최대 ${(MAX_FILE_SIZE_BYTES / (1024 * 1024)).toFixed(0)}MB)`);
+        continue;
       }
-
-      return next;
-    });
-
-    if (exceeded) {
-      setError(`최대 ${MAX_FILES}개까지 업로드할 수 있습니다. 초과한 파일은 제외되었습니다.`);
+      const mime = file.type || "";
+      const allowed = ALLOWED_MIME_TYPES.some((t) => mime === t || mime.startsWith(t));
+      if (!allowed) {
+        errors.push(`${file.name}: 지원하지 않는 형식`);
+        continue;
+      }
+      filtered.push(file);
     }
-    if (added === 0) {
-      setError("추가된 파일이 없습니다. 이미 선택한 파일이거나 제한을 초과했을 수 있습니다.");
+
+    const limited = filtered.slice(0, MAX_FILES);
+    setFiles(limited);
+
+    if (errors.length) {
+      setError(`다음 파일은 제외되었습니다: ${errors.join(", ")}`);
     }
-    return added;
+    if (limited.length === 0) {
+      setError(errors.length ? "선택한 파일이 모두 제외되었습니다." : "추가된 파일이 없습니다.");
+    }
+
+    return limited.length;
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

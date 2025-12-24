@@ -47,15 +47,6 @@ export async function POST(req: Request) {
 
   const service = createServiceClient();
 
-  // 파일 존재 여부 간단 체크 (옵션)
-  const { data: exists, error: headError } = await service.storage.from(STORAGE_BUCKET).list("", {
-    search: storagePath.split("/").pop(),
-    limit: 1,
-  });
-  if (headError) {
-    return NextResponse.json({ error: headError.message }, { status: 500 });
-  }
-
   const inserted = await service
     .from("documents")
     .insert({
