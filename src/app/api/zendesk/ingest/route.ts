@@ -55,7 +55,7 @@ export async function POST(request: Request) {
   });
 
   const auth = Buffer.from(`${email}/token:${token}`).toString("base64");
-  const url = `https://${subdomain}.zendesk.com/api/v2/search.json?query=${encodeURIComponent(query)}&per_page=50`;
+  const url = `https://${subdomain}.zendesk.com/api/v2/search.json?query=${encodeURIComponent(query)}&per_page=200`;
 
   try {
     const res = await fetch(url, {

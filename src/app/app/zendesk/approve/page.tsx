@@ -15,6 +15,9 @@ type FaqItem = {
   reviewer: string | null;
   approved_at: string | null;
   intent_id: number | null;
+  created_at?: string | null;
+  raw_preview?: string | null;
+  ticket_id?: number | null;
 };
 
 export default function ZendeskApprovePage() {
@@ -26,10 +29,10 @@ export default function ZendeskApprovePage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/zendesk/search", {
+      const res = await fetch("/api/zendesk/faqs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}), // 기존 search API 재활용 (후보/승인 필터 없으므로 별도 API 권장)
+        body: JSON.stringify({ status: "candidate", limit: 100 }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -39,13 +42,14 @@ export default function ZendeskApprovePage() {
       const mapped: FaqItem[] =
         data.items?.map((i, idx) => ({
           id: Number(i.id ?? idx),
-          faq_question: i.subject ?? i.faq_question ?? "",
+          faq_question: i.faq_question ?? "",
           faq_answer: i.faq_answer ?? "",
           approved: Boolean(i.approved),
           candidate: Boolean(i.candidate),
           reviewer: i.reviewer ?? null,
           approved_at: i.approved_at ?? null,
           intent_id: i.intent_id ?? null,
+          created_at: i.created_at ?? null,
         })) ?? [];
       setItems(mapped);
     } catch (err) {
@@ -99,12 +103,12 @@ export default function ZendeskApprovePage() {
                 item.approved ? "border-emerald-200 ring-emerald-100" : "",
               )}
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="text-xs font-semibold text-slate-600">FAQ 후보 #{item.id}</div>
-                  <div className="text-base font-semibold text-slate-900 leading-tight">
-                    {item.faq_question || "(질문 없음)"}
-                  </div>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <div className="text-xs font-semibold text-slate-600">FAQ 후보 #{item.id}</div>
+                    <div className="text-base font-semibold text-slate-900 leading-tight">
+                      {item.faq_question || "(질문 없음)"}
+                    </div>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" size="sm" onClick={() => handleAction(item.id, "reject")}>
