@@ -39,20 +39,21 @@ const ensurePdfDomStubs = () => {
   }
 };
 
+const loadPdfParse = async () => {
+  const mod = (await import("pdf-parse")) as unknown as Record<string, unknown>;
+  const fn = (mod as { default?: unknown }).default ?? (mod as { parse?: unknown }).parse ?? mod;
+  if (typeof fn === "function") return fn as (data: Buffer) => Promise<{ text?: string }>;
+  throw new Error("pdf-parse 기본 함수를 찾을 수 없습니다.");
+};
+
 export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promise<string> => {
   const kind = detectKind(mimeType);
 
   switch (kind) {
     case "pdf": {
       ensurePdfDomStubs(); // pdf-parse import 시점에 DOM 의존성을 만족시키기 위해 선행
-      const pdfModule = (await import("pdf-parse")) as unknown as Record<string, unknown>;
-
-      // pdf-parse의 기본 함수만 사용하여 canvas/DOM 의존성을 제거
-      const parseFn = pdfModule.default ?? pdfModule;
-      if (typeof parseFn !== "function") {
-        throw new Error("pdf-parse 기본 함수를 찾을 수 없습니다.");
-      }
-      const result = await (parseFn as (data: Buffer) => Promise<{ text?: string }>)(buffer);
+      const parseFn = await loadPdfParse();
+      const result = await parseFn(buffer);
       return result.text ?? "";
     }
     case "docx": {
