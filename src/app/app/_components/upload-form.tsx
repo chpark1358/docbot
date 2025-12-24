@@ -22,6 +22,7 @@ type UploadResult = {
 };
 
 const MAX_FILES = 5;
+const ALLOWED_EXT = [".pdf", ".docx", ".txt"];
 
 const humanSize = (bytes: number) => {
   if (bytes === 0) return "0 B";
@@ -104,7 +105,9 @@ export function UploadForm({ onSuccess }: Props) {
         continue;
       }
       const mime = file.type || "";
-      const allowed = ALLOWED_MIME_TYPES.some((t) => mime === t || mime.startsWith(t));
+      const ext = file.name.split(".").pop()?.toLowerCase();
+      const hasExt = ext ? ALLOWED_EXT.some((e) => e === `.${ext}`) : false;
+      const allowed = ALLOWED_MIME_TYPES.some((t) => mime === t || mime.startsWith(t)) || hasExt;
       if (!allowed) {
         errors.push(`${file.name}: 지원하지 않는 형식`);
         continue;
