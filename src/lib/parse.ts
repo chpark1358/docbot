@@ -37,6 +37,23 @@ const ensurePdfDomStubs = () => {
   if (typeof g.Image === "undefined") {
     g.Image = class {} as unknown;
   }
+  // @napi-rs/canvas가 있으면 연결
+  try {
+    // turbopack에서 번들링을 피하기 위해 eval 사용
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const req = eval("require") as NodeRequire;
+    const mod = req("@napi-rs/canvas");
+    const Canvas = (mod as { Canvas?: unknown }).Canvas;
+    const Image = (mod as { Image?: unknown }).Image;
+    if (!g.CanvasRenderingContext2D && Canvas) {
+      g.CanvasRenderingContext2D = (Canvas as { prototype?: unknown }).prototype as unknown;
+    }
+    if (!g.Image && Image) {
+      g.Image = Image as unknown;
+    }
+  } catch {
+    // optional, ignore
+  }
 };
 
 const loadPdfParse = async () => {
