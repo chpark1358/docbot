@@ -2,8 +2,15 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { buildPrompt } from "@/lib/prompt";
-import { ALL_DOCS_MIME_TYPE, CHAT_MODEL, EMBEDDING_MODEL, VIRTUAL_CHAT_MIME_TYPE, WEB_SEARCH_CONTEXT_SIZE } from "@/lib/constants";
+import {
+  ALL_DOCS_MIME_TYPE,
+  CHAT_MODEL,
+  EMBEDDING_MODEL,
+  VIRTUAL_CHAT_MIME_TYPE,
+  WEB_SEARCH_CONTEXT_SIZE,
+} from "@/lib/constants";
 import type { ChatSource } from "@/lib/database.types";
+import { fetchFaqEmbeddings } from "@/lib/zendesk/search";
 import {
   ensureAllDocsVirtualDocumentId,
   ensureVirtualChatDocumentId,
@@ -588,16 +595,52 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: matchError.message }, { status: 500 });
     }
 
+    // FAQ 임베딩 조회 및 스코어링
+    let faqSources: ChatSource[] = [];
+    try {
+      const faqs = await fetchFaqEmbeddings(8);
+      if (faqs?.length) {
+        const dot = (a: number[], b: number[]) => a.reduce((acc, v, i) => acc + v * b[i], 0);
+        const scored = faqs
+          .filter((f) => Array.isArray(f.embedding))
+          .map((f) => ({
+            ...f,
+            score: dot(f.embedding as number[], queryEmbedding),
+          }))
+          .sort((a, b) => b.score - a.score)
+          .slice(0, 4);
+        faqSources = scored.map((f, idx) => ({
+          type: "chunk",
+          id: `faq-${f.faq_id ?? f.id}`,
+          order: idx + 1,
+          content: f.content ?? "",
+          metadata: f.metadata ?? { source: "zendesk_faq" },
+          similarity: f.score,
+        }));
+      }
+    } catch {
+      // FAQ 임베딩 조회 실패 시 무시
+    }
+
     const prompt = buildPrompt(
       question,
-      (matches ?? []).map((m) => ({
-        id: m.id,
-        content: m.content,
-        similarity: m.similarity,
-      })),
+      [
+        ...faqSources.map((s) => ({
+          id: (s as any).id ?? "",
+          content: (s as any).content ?? "",
+          similarity: (s as any).similarity ?? 0,
+        })),
+        ...(matches ?? []).map((m) => ({
+          id: m.id,
+          content: m.content,
+          similarity: m.similarity,
+        })),
+      ],
     );
 
-    const hasRelevant = (matches ?? []).some((m) => (m.similarity ?? 0) >= MIN_SIMILARITY);
+    const hasRelevant =
+      faqSources.some((s) => (s as any).similarity >= MIN_SIMILARITY) ||
+      (matches ?? []).some((m) => (m.similarity ?? 0) >= MIN_SIMILARITY);
     const greeting = isGreetingMessage(question);
 
     if (greeting || !hasRelevant) {
