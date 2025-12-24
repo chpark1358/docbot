@@ -119,7 +119,7 @@ export default function ZendeskPage() {
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Zendesk</p>
         <h1 className="text-2xl font-semibold tracking-tight">티켓 요약/내보내기 (프리셋)</h1>
         <p className="text-sm text-muted-foreground">
-          조직 또는 요청자 기준으로 티켓을 조회하고 요약/CSV 내보내기를 실행할 수 있는 메뉴입니다. Zendesk API와 연동되어
+          조직 또는 요청자 기준으로 티켓을 조회하고 요약/엑셀 내보내기를 실행할 수 있는 메뉴입니다. Zendesk API와 연동되어
           검색 결과를 바로 확인할 수 있습니다.
         </p>
       </div>
@@ -208,7 +208,7 @@ export default function ZendeskPage() {
           초기화
         </Button>
         {loading ? <span className="text-sm text-muted-foreground">불러오는 중...</span> : null}
-        {downloading ? <span className="text-sm text-muted-foreground">CSV 생성 중...</span> : null}
+        {downloading ? <span className="text-sm text-muted-foreground">엑셀 생성 중...</span> : null}
       </div>
 
       {message ? (

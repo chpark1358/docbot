@@ -182,6 +182,14 @@ export async function POST(request: Request) {
     ws.getRow(1).font = { bold: true, color: { argb: "FF1F2937" } };
     ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFE5E7EB" } };
     ws.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
+    ws.getRow(1).eachCell((cell) => {
+      cell.border = {
+        top: { style: "thin", color: { argb: "FFCBD5E1" } },
+        left: { style: "thin", color: { argb: "FFCBD5E1" } },
+        bottom: { style: "thin", color: { argb: "FFCBD5E1" } },
+        right: { style: "thin", color: { argb: "FFCBD5E1" } },
+      };
+    });
 
     enriched.forEach((row, idx) => {
       const created = row.created_at ? new Date(String(row.created_at)).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) : "";
@@ -204,6 +212,15 @@ export async function POST(request: Request) {
       if (idx % 2 === 1) {
         excelRow.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8FAFC" } };
       }
+      // 테두리 적용
+      excelRow.eachCell((cell) => {
+        cell.border = {
+          top: { style: "thin", color: { argb: "FFE2E8F0" } },
+          left: { style: "thin", color: { argb: "FFE2E8F0" } },
+          bottom: { style: "thin", color: { argb: "FFE2E8F0" } },
+          right: { style: "thin", color: { argb: "FFE2E8F0" } },
+        };
+      });
     });
 
     // 링크 스타일 (하이퍼링크)
