@@ -86,15 +86,16 @@ export function UploadForm({ onSuccess }: Props) {
     return data as UploadResult & { documentId?: string };
   };
 
-  const addFiles = (incoming: FileList | File[]) => {
+  const addFiles = (incoming: FileList | File[]): number => {
     setError(null);
     setSuccess(null);
     setResults([]);
 
     const incomingFiles = Array.from(incoming);
-    if (!incomingFiles.length) return;
+    if (!incomingFiles.length) return 0;
 
     let exceeded = false;
+    let added = 0;
 
     setFiles((prev) => {
       const keys = new Set(prev.map(fileKey));
@@ -109,6 +110,7 @@ export function UploadForm({ onSuccess }: Props) {
         }
         next.push(file);
         keys.add(key);
+        added += 1;
       }
 
       return next;
@@ -117,6 +119,10 @@ export function UploadForm({ onSuccess }: Props) {
     if (exceeded) {
       setError(`최대 ${MAX_FILES}개까지 업로드할 수 있습니다. 초과한 파일은 제외되었습니다.`);
     }
+    if (added === 0) {
+      setError("추가된 파일이 없습니다. 이미 선택한 파일이거나 제한을 초과했을 수 있습니다.");
+    }
+    return added;
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -275,7 +281,13 @@ export function UploadForm({ onSuccess }: Props) {
             onChange={(event) => {
               if (isLoading) return;
               const list = event.currentTarget.files;
-              if (list?.length) addFiles(list);
+              if (list?.length) {
+                const added = addFiles(list);
+                if (added === 0) {
+                  // 동일 파일 재선택 시 안내
+                  setError("추가된 파일이 없습니다. 다른 파일을 선택하거나 새로 업로드를 시도하세요.");
+                }
+              }
               event.currentTarget.value = "";
             }}
           />
