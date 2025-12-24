@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 type Mode = "org" | "requester";
 
@@ -7,6 +8,7 @@ type IngestBody = {
   months?: number; // 최근 N개월
   tags?: string[]; // 포함 태그 (옵션)
   exclude_tags?: string[]; // 제외 태그 (옵션)
+  persist?: boolean; // true면 DB에 저장
 };
 
 const buildQuery = ({ status, months, tags, exclude_tags }: IngestBody) => {
@@ -73,11 +75,45 @@ export async function POST(request: Request) {
     }
 
     const data = (await res.json()) as { results?: Array<Record<string, unknown>>; next_page?: string | null };
+    const items = data.results ?? [];
+
+    if (body.persist) {
+      try {
+        const service = createServiceClient();
+        const rows = items.map((r) => ({
+          id: Number(r.id),
+          subject: typeof r.subject === "string" ? r.subject : null,
+          requester: typeof r.requester_id === "number" ? String(r.requester_id) : null,
+          assignee: typeof r.assignee_id === "number" ? String(r.assignee_id) : null,
+          status: typeof r.status === "string" ? r.status : null,
+          tags: Array.isArray(r.tags) ? (r.tags as string[]) : null,
+          solved_at: r.solved_at ? new Date(String(r.solved_at)).toISOString() : null,
+          body_json: r,
+        }));
+        if (rows.length) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (service.from as any)("zendesk_raw_tickets").upsert(rows, { onConflict: "id" });
+        }
+      } catch (err) {
+        // DB 저장 실패는 반환 payload에는 포함하되 요청 자체는 성공 처리
+        return NextResponse.json(
+          {
+            query,
+            count: items.length,
+            next_page: data.next_page ?? null,
+            items,
+            warning: err instanceof Error ? err.message : "DB 저장 중 오류",
+          },
+          { status: 200 },
+        );
+      }
+    }
+
     return NextResponse.json({
       query,
-      count: data.results?.length ?? 0,
+      count: items.length,
       next_page: data.next_page ?? null,
-      items: data.results ?? [],
+      items,
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "알 수 없는 오류";
