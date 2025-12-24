@@ -115,6 +115,11 @@ export function AppSidebar({ userEmail, threads }: Props) {
               <LifeBuoy className="h-4 w-4" /> Zendesk 요약
             </Button>
           </Link>
+          <Link href="/app/zendesk/approve">
+            <Button variant="ghost" className="w-full justify-start gap-2">
+              <LifeBuoy className="h-4 w-4" /> Zendesk FAQ 승인
+            </Button>
+          </Link>
           {!collapsed ? (
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
