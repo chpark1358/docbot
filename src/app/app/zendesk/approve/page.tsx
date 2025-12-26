@@ -20,10 +20,18 @@ type FaqItem = {
   ticket_id?: number | null;
 };
 
+type RawPreview = {
+  id: number;
+  subject?: string | null;
+  body_json?: unknown;
+};
+
 export default function ZendeskApprovePage() {
   const [items, setItems] = useState<FaqItem[]>([]);
+  const [raws, setRaws] = useState<Record<number, RawPreview>>({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<"candidate" | "approved">("candidate");
 
   const load = async () => {
     setLoading(true);
@@ -32,7 +40,7 @@ export default function ZendeskApprovePage() {
       const res = await fetch("/api/zendesk/faqs", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "candidate", limit: 100 }),
+        body: JSON.stringify({ status: statusFilter, limit: 100 }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -52,6 +60,18 @@ export default function ZendeskApprovePage() {
           created_at: i.created_at ?? null,
         })) ?? [];
       setItems(mapped);
+      // 원본 미리보기 가져오기 (id 매칭)
+      const rawRes = await fetch("/api/zendesk/fetch-raw", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 50 }),
+      });
+      const rawJson = await rawRes.json().catch(() => ({ items: [] as RawPreview[] }));
+      const map: Record<number, RawPreview> = {};
+      for (const r of rawJson.items ?? []) {
+        if (typeof r.id === "number") map[r.id] = r;
+      }
+      setRaws(map);
     } catch (err) {
       setError(err instanceof Error ? err.message : "로드 중 오류");
     } finally {
@@ -61,7 +81,7 @@ export default function ZendeskApprovePage() {
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [statusFilter]);
 
   const handleAction = async (faq_id: number, mode: "approve" | "reject") => {
     try {
@@ -89,20 +109,30 @@ export default function ZendeskApprovePage() {
         <h1 className="text-2xl font-semibold">FAQ 후보 승인</h1>
         <p className="text-sm text-muted-foreground">자동 생성된 FAQ 후보를 승인 또는 반려합니다.</p>
       </div>
+      <div className="flex items-center gap-2">
+        <Button variant={statusFilter === "candidate" ? "secondary" : "ghost"} size="sm" onClick={() => setStatusFilter("candidate")}>
+          후보
+        </Button>
+        <Button variant={statusFilter === "approved" ? "secondary" : "ghost"} size="sm" onClick={() => setStatusFilter("approved")}>
+          승인됨
+        </Button>
+      </div>
 
       {error ? <div className="rounded-lg border border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive">{error}</div> : null}
 
       <ScrollArea className="h-[760px] rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-2xl">
         {loading ? <div className="text-sm text-muted-foreground">불러오는 중...</div> : null}
         <div className="grid gap-3">
-          {items.map((item) => (
-            <div
-              key={item.id}
-              className={cn(
-                "rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-[0_18px_60px_-28px_rgba(0,0,0,0.25)] ring-1 ring-slate-100",
-                item.approved ? "border-emerald-200 ring-emerald-100" : "",
-              )}
-            >
+          {items.map((item) => {
+            const raw = item.intent_id ? raws[item.intent_id] : undefined;
+            return (
+              <div
+                key={item.id}
+                className={cn(
+                  "rounded-2xl border border-slate-200 bg-white/90 p-5 shadow-[0_18px_60px_-28px_rgba(0,0,0,0.25)] ring-1 ring-slate-100",
+                  item.approved ? "border-emerald-200 ring-emerald-100" : "",
+                )}
+              >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
                     <div className="text-xs font-semibold text-slate-600">FAQ 후보 #{item.id}</div>
@@ -119,14 +149,24 @@ export default function ZendeskApprovePage() {
                   </Button>
                 </div>
               </div>
-              <Separator className="my-3" />
+                <Separator className="my-3" />
               <div className="text-sm text-slate-700 leading-6 whitespace-pre-wrap">{item.faq_answer || "(답변 없음)"}</div>
+              {raw ? (
+                <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
+                  <div className="font-semibold text-slate-800">원본 티켓 #{raw.id}</div>
+                  <div className="mt-1 text-slate-700">{raw.subject ?? "(제목 없음)"}</div>
+                  <div className="mt-1 line-clamp-3 text-slate-600">
+                    {typeof raw.body_json === "string" ? raw.body_json.slice(0, 400) : JSON.stringify(raw.body_json)?.slice(0, 400)}
+                  </div>
+                </div>
+              ) : null}
               <div className="mt-3 text-xs text-muted-foreground">
                 상태: {item.approved ? "승인됨" : item.candidate ? "후보" : "반려됨"}{" "}
                 {item.approved_at ? `· ${new Date(item.approved_at).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" })}` : ""}
               </div>
             </div>
-          ))}
+            );
+          })}
           {items.length === 0 && !loading ? (
             <div className="rounded-xl border border-dashed border-slate-200 bg-white/80 p-6 text-sm text-muted-foreground">
               후보가 없습니다. 파이프라인을 먼저 실행하세요.
