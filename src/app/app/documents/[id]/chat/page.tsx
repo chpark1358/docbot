@@ -18,9 +18,9 @@ export default async function DocumentChatPage({ params }: Params) {
 
   const { data: document } = await supabase
     .from("documents")
-    .select("id, title, user_id, status")
+    .select("id, title, user_id, status, is_shared")
     .eq("id", documentId)
-    .eq("user_id", user.id)
+    .or(`user_id.eq.${user.id},is_shared.eq.true`)
     .single();
 
   if (!document) {
