@@ -211,6 +211,11 @@ export function DocumentsClient({ currentUserId, ownerLabel, documents }: Props)
                                 <span className={cn("rounded-full border px-2 py-0.5 text-[11px] font-medium", chip.className)}>
                                   {chip.label}
                                 </span>
+                                {doc.is_shared ? (
+                                  <span className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-0.5 text-[11px] font-medium text-indigo-700">
+                                    공유
+                                  </span>
+                                ) : null}
                               </div>
                               {doc.error_message ? (
                                 <div className="mt-1 truncate text-xs text-destructive">에러: {doc.error_message}</div>

@@ -17,11 +17,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "로그인이 필요합니다." }, { status: 401 });
   }
 
-  const body = await req.json().catch(() => null) as { storagePath?: string; fileName?: string; mimeType?: string; size?: number } | null;
+  const body = await req.json().catch(() => null) as {
+    storagePath?: string;
+    fileName?: string;
+    mimeType?: string;
+    size?: number;
+    isShared?: boolean;
+  } | null;
   const storagePath = typeof body?.storagePath === "string" ? body.storagePath : "";
   const fileName = typeof body?.fileName === "string" ? body.fileName : "";
   const size = typeof body?.size === "number" ? body.size : 0;
   const mimeTypeInput = typeof body?.mimeType === "string" ? body.mimeType : "";
+  const isShared = body?.isShared === true;
   const ext = fileName.split(".").pop()?.toLowerCase() || "";
   const extMime =
     ext === "pdf"
@@ -67,6 +74,7 @@ export async function POST(req: Request) {
       size,
       status: "queued",
       user_id: user.id,
+      is_shared: isShared,
     })
     .select("id")
     .single();

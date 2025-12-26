@@ -54,6 +54,7 @@ export function UploadForm({ onSuccess }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const [results, setResults] = useState<UploadResult[]>([]);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
+  const [isShared, setIsShared] = useState(false);
 
   const fileKey = (file: File) => `${file.name}:${file.size}:${file.lastModified}`;
 
@@ -79,6 +80,7 @@ export function UploadForm({ onSuccess }: Props) {
         fileName: file.name,
         mimeType: mimeType || file.type || "application/octet-stream",
         size: file.size,
+        isShared,
       }),
     });
     const data = await res.json().catch(() => null);
@@ -217,10 +219,30 @@ export function UploadForm({ onSuccess }: Props) {
     <Card>
       <CardHeader>
         <CardTitle>문서 업로드</CardTitle>
-        <CardDescription>pdf, docx, txt 형식을 최대 {MAX_FILES}개까지 드래그&드롭 또는 선택하면 자동으로 처리합니다. (파일당 최대 30MB)</CardDescription>
+      <CardDescription>
+        pdf, docx, txt 형식을 최대 {MAX_FILES}개까지 드래그&드롭 또는 선택하면 자동으로 처리합니다. (파일당 최대{" "}
+        {(MAX_FILE_SIZE_BYTES / (1024 * 1024)).toFixed(0)}MB)
+      </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+            <div>
+              <p className="text-sm font-medium text-foreground">공유 문서로 업로드</p>
+              <p className="text-xs text-muted-foreground">모든 사용자가 조회/검색 가능. 삭제·다운로드는 소유자만.</p>
+            </div>
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <input
+                type="checkbox"
+                className="h-4 w-4 rounded border border-input"
+                checked={isShared}
+                onChange={(e) => setIsShared(e.target.checked)}
+                disabled={isLoading}
+              />
+              공유
+            </label>
+          </div>
+
           <label
             htmlFor="file"
             className={cn(
