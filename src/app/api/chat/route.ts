@@ -457,10 +457,10 @@ export async function POST(req: Request) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: matchesRaw, error: matchError } = await (supabase as any).rpc("match_chunks_all_user", {
       query_embedding: queryEmbedding,
-      match_count: 6,
+      match_count: 12,
       similarity_threshold: 0.2,
     });
-    const matches = (matchesRaw ?? []) as { id: string; content: string; similarity: number; doc_title?: string }[];
+    let matches = (matchesRaw ?? []) as { id: string; content: string; similarity: number; doc_title?: string }[];
 
     if (matchError) {
       const msg =
@@ -470,7 +470,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: msg }, { status: 500 });
     }
 
-    const hasRelevant = matches.some((m) => (m.similarity ?? 0) >= MIN_SIMILARITY);
+    let hasRelevant = matches.some((m) => (m.similarity ?? 0) >= MIN_SIMILARITY);
+
+    // 매칭이 없거나 유사도가 낮으면 완화된 기준으로 한 번 더 조회
+    if (!hasRelevant) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: fallbackRaw, error: fallbackError } = await (supabase as any).rpc("match_chunks_all_user", {
+        query_embedding: queryEmbedding,
+        match_count: 12,
+        similarity_threshold: 0,
+      });
+      if (!fallbackError && Array.isArray(fallbackRaw)) {
+        matches = fallbackRaw as { id: string; content: string; similarity: number; doc_title?: string }[];
+        hasRelevant = matches.some((m) => (m.similarity ?? 0) >= MIN_SIMILARITY);
+      }
+    }
     const greeting = isGreetingMessage(question);
 
     if (greeting || !hasRelevant) {
