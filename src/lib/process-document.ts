@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { chunkText } from "@/lib/chunk";
-import { ALLOWED_MIME_TYPES, STORAGE_BUCKET } from "@/lib/constants";
+import { ALLOWED_MIME_TYPES, STORAGE_BUCKET, CHUNK_SIZE } from "@/lib/constants";
 import { embedChunks } from "@/lib/embeddings";
 import { parseBufferToText } from "@/lib/parse";
 import type { Database } from "@/lib/database.types";
@@ -52,7 +52,13 @@ export const processDocument = async (
 
     const buffer = Buffer.from(await download.data.arrayBuffer());
     const text = await parseBufferToText(buffer, doc.mime_type);
-    const chunks = chunkText(text);
+    let chunks = chunkText(text);
+
+    // 텍스트가 거의 없거나 chunk가 비어도 실패하지 않도록 최소 1개 청크를 생성
+    if (!chunks.length) {
+      const fallback = text && text.trim().length > 0 ? text.trim() : "텍스트를 추출할 수 없습니다.";
+      chunks = [fallback.slice(0, CHUNK_SIZE)];
+    }
 
     if (!chunks.length) {
       throw new Error("본문을 추출할 수 없습니다.");
