@@ -30,6 +30,7 @@ export default function ZendeskApprovePage() {
   const [items, setItems] = useState<FaqItem[]>([]);
   const [raws, setRaws] = useState<Record<number, RawPreview>>({});
   const [loading, setLoading] = useState(false);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"candidate" | "approved">("candidate");
 
@@ -83,6 +84,25 @@ export default function ZendeskApprovePage() {
     void load();
   }, [statusFilter]);
 
+  const handlePipeline = async () => {
+    if (pipelineLoading) return;
+    setPipelineLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/zendesk/run-pipeline", { method: "POST" });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? `파이프라인 실패: ${res.status}`);
+      }
+      alert("파이프라인 실행 완료: 티켓 수집 → 정제 → 후보 적재가 완료되었습니다. 다시 불러와 주세요.");
+      void load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "파이프라인 실행 중 오류");
+    } finally {
+      setPipelineLoading(false);
+    }
+  };
+
   const handleAction = async (faq_id: number, mode: "approve" | "reject") => {
     try {
       const res = await fetch("/api/zendesk/approve", {
@@ -108,6 +128,12 @@ export default function ZendeskApprovePage() {
         <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Zendesk</div>
         <h1 className="text-2xl font-semibold">FAQ 후보 승인</h1>
         <p className="text-sm text-muted-foreground">자동 생성된 FAQ 후보를 승인 또는 반려합니다.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+          <Button variant="outline" size="sm" onClick={handlePipeline} disabled={pipelineLoading}>
+            {pipelineLoading ? "파이프라인 실행 중..." : "티켓 수집→정제→후보 적재 실행"}
+          </Button>
+          <span>※ ZENDESK_SUBDOMAIN / ZENDESK_EMAIL / ZENDESK_API_TOKEN 환경변수 필요</span>
+        </div>
       </div>
       <div className="flex items-center gap-2">
         <Button variant={statusFilter === "candidate" ? "secondary" : "ghost"} size="sm" onClick={() => setStatusFilter("candidate")}>
