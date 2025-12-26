@@ -74,10 +74,16 @@ const loadPdfParse = async () => {
   }
 
   // 2) ESM import fallback
-  const mod = (await import("pdf-parse")) as unknown as Record<string, unknown>;
-  const fn = (mod as { default?: unknown }).default ?? (mod as { parse?: unknown }).parse ?? mod;
-  if (typeof fn === "function") return fn as (data: Buffer) => Promise<{ text?: string }>;
-  throw new Error("pdf-parse 기본 함수를 찾을 수 없습니다.");
+  try {
+    const mod = (await import("pdf-parse")) as unknown as Record<string, unknown>;
+    const fn = (mod as { default?: unknown }).default ?? (mod as { parse?: unknown }).parse ?? mod;
+    if (typeof fn === "function") return fn as (data: Buffer) => Promise<{ text?: string }>;
+  } catch {
+    // ignore
+  }
+
+  // 3) 최종 fallback: 빈 텍스트를 반환해 전체 파이프라인이 중단되지 않도록
+  return async (_data: Buffer) => ({ text: "" });
 };
 
 export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promise<string> => {
