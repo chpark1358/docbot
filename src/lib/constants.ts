@@ -5,6 +5,7 @@ export const ALLOWED_MIME_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/msword",
   "application/vnd.ms-word",
+  "application/haansoftdocx",
   "text/plain",
 ];
 
