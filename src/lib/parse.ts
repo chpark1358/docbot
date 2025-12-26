@@ -86,6 +86,32 @@ const loadPdfParse = async () => {
   return async (_data: Buffer) => ({ text: "" });
 };
 
+const fallbackPdfText = async (buffer: Buffer): Promise<string> => {
+  try {
+    const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    // 워커 없이 동기 모드
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (pdfjs as any).GlobalWorkerOptions.workerSrc = undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const doc = await (pdfjs as any).getDocument({ data: buffer }).promise;
+    const texts: string[] = [];
+    const pageCount = doc.numPages ?? 0;
+    for (let p = 1; p <= pageCount; p += 1) {
+      const page = await doc.getPage(p);
+      const content = await page.getTextContent();
+      const pageText = (content.items ?? [])
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((it: any) => (typeof it.str === "string" ? it.str : ""))
+        .join(" ");
+      texts.push(pageText);
+    }
+    return texts.join("\n").trim();
+  } catch (err) {
+    console.warn("pdfjs fallback failed", err);
+    return "";
+  }
+};
+
 export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promise<string> => {
   const kind = detectKind(mimeType);
 
@@ -95,11 +121,17 @@ export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promi
       const parseFn = await loadPdfParse();
       try {
         const result = await parseFn(buffer);
-        return result.text ?? "";
+        const text = result.text ?? "";
+        if (text.trim().length > 20) return text;
+        // 텍스트가 거의 없으면 pdfjs로 재시도
+        const fb = await fallbackPdfText(buffer);
+        if (fb.trim().length > 0) return fb;
+        return text;
       } catch (err) {
         // pdfjs/canvas 의존성 문제 시 실패하지 않고 빈 텍스트로 처리
         console.warn("pdf parse failed, returning empty text", err);
-        return "";
+        const fb = await fallbackPdfText(buffer);
+        return fb || "";
       }
     }
     case "docx": {
