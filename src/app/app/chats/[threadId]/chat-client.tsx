@@ -224,8 +224,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               className="flex-1 overflow-auto pr-1"
               style={{
                 scrollBehavior: "smooth",
-                paddingBottom: "96px",
-                maxHeight: "calc(100vh - 200px)",
+                paddingBottom: "180px",
               }}
             >
             {messages.length === 0 ? (
@@ -307,7 +306,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="문서 내용에 대해 질문하세요. (Enter 전송 / Shift+Enter 줄바꿈)"
-                className="min-h-[84px] resize-none border-none bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
+                className="min-h-[72px] resize-none border-none bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
                 disabled={isLoading}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
