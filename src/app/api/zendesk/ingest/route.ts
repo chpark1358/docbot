@@ -69,7 +69,13 @@ export async function POST(request: Request) {
     if (!res.ok) {
       const text = await res.text();
       return NextResponse.json(
-        { error: `Zendesk 오류: ${res.status} ${res.statusText}`, detail: text.slice(0, 500) },
+        {
+          error: `Zendesk 오류: ${res.status} ${res.statusText}`,
+          detail: text.slice(0, 500),
+          subdomain,
+          email_hint: email.split("@")[0],
+          url,
+        },
         { status: res.status },
       );
     }
@@ -117,6 +123,14 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     const message = err instanceof Error ? err.message : "알 수 없는 오류";
-    return NextResponse.json({ error: `요청 실패: ${message}` }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: `요청 실패: ${message}`,
+        subdomain,
+        email_hint: email.split("@")[0],
+        url,
+      },
+      { status: 500 },
+    );
   }
 }
