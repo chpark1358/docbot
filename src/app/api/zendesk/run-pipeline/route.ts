@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import { createServiceClient } from "@/lib/supabase/service";
-
 // 간단한 키 검사로 오남용 방지(선택)
 const CRON_KEY = process.env.CRON_KEY;
 
-async function call(path: string, key: string | null) {
+async function call(path: string, key: string | null, body?: unknown) {
   const res = await fetch(path, {
     method: "POST",
-    headers: key ? { "X-CRON-KEY": key } : undefined,
+    headers: {
+      ...(key ? { "X-CRON-KEY": key } : {}),
+      "Content-Type": "application/json",
+    },
+    body: body ? JSON.stringify(body) : undefined,
   });
   const data = await res.json().catch(() => null);
   if (!res.ok) {
@@ -34,13 +36,24 @@ export async function POST(req: Request) {
   try {
     const steps = [] as { step: string; result: unknown }[];
 
-    steps.push({ step: "fetch-raw", result: await call(`${origin}/api/zendesk/fetch-raw`, CRON_KEY ?? null) });
-    steps.push({ step: "process", result: await call(`${origin}/api/zendesk/process`, CRON_KEY ?? null) });
-    steps.push({ step: "ingest", result: await call(`${origin}/api/zendesk/ingest`, CRON_KEY ?? null) });
+    // 1) Zendesk 티켓 수집 + raw 저장
+    steps.push({
+      step: "ingest",
+      result: await call(`${origin}/api/zendesk/ingest`, CRON_KEY ?? null, {
+        status: "status:solved status:closed",
+        months: 6,
+        persist: true,
+      }),
+    });
+
+    // 2) 정제/FAQ 후보 생성 (방금 수집한 raw를 우선적으로 처리)
+    steps.push({
+      step: "process",
+      result: await call(`${origin}/api/zendesk/process`, CRON_KEY ?? null, { limit: 50 }),
+    });
 
     return NextResponse.json({ ok: true, steps });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "파이프라인 실패" }, { status: 500 });
   }
 }
-
