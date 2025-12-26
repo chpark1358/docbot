@@ -17,8 +17,7 @@ export default async function DocumentsPage() {
 
   const { data: docs } = await supabase
     .from("documents")
-    .select("id, title, status, size, mime_type, created_at, updated_at, error_message")
-    .eq("user_id", user.id)
+    .select("id, title, status, size, mime_type, created_at, updated_at, error_message, user_id")
     .neq("status", "failed")
     .neq("mime_type", VIRTUAL_CHAT_MIME_TYPE)
     .neq("mime_type", ALL_DOCS_MIME_TYPE)
@@ -28,5 +27,5 @@ export default async function DocumentsPage() {
   const email = user.email ?? "";
   const ownerLabel = displayName || (email ? email.split("@")[0] : "나");
 
-  return <DocumentsClient ownerLabel={ownerLabel} documents={docs ?? []} />;
+  return <DocumentsClient currentUserId={user.id} ownerLabel={ownerLabel} documents={docs ?? []} />;
 }

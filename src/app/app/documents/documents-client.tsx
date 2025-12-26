@@ -25,9 +25,11 @@ type DocumentRow = {
   created_at: string;
   updated_at: string;
   error_message: string | null;
+  user_id: string;
 };
 
 type Props = {
+  currentUserId: string;
   ownerLabel: string;
   documents: DocumentRow[];
 };
@@ -72,7 +74,7 @@ const statusChip = (status: string) => {
   }
 };
 
-export function DocumentsClient({ ownerLabel, documents }: Props) {
+export function DocumentsClient({ currentUserId, ownerLabel, documents }: Props) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [formatFilter, setFormatFilter] = useState<string>("all");
@@ -185,6 +187,8 @@ export function DocumentsClient({ ownerLabel, documents }: Props) {
                     const chip = statusChip(doc.status);
                     const dateLabel = formatDate(doc.updated_at || doc.created_at);
                     const ready = doc.status === "ready";
+                    const isOwner = doc.user_id === currentUserId;
+                    const ownerText = isOwner ? ownerLabel : "공유 문서";
                     return (
                       <tr key={doc.id} className="hover:bg-muted/30">
                         <td className="px-4 py-3 align-middle">
@@ -213,7 +217,7 @@ export function DocumentsClient({ ownerLabel, documents }: Props) {
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 align-middle">{ownerLabel}</td>
+                        <td className="px-4 py-3 align-middle">{ownerText}</td>
                         <td className="px-4 py-3 align-middle">{dateLabel}</td>
                         <td className="px-4 py-3 align-middle text-right">{humanSize(doc.size)}</td>
                         <td className="px-4 py-3 align-middle text-right">
@@ -225,8 +229,9 @@ export function DocumentsClient({ ownerLabel, documents }: Props) {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-44">
                               <DropdownMenuItem
+                                disabled={!isOwner}
                                 onClick={async () => {
-                                  if (busyId) return;
+                                  if (busyId || !isOwner) return;
                                   setBusyId(doc.id);
                                   try {
                                     const res = await fetch(`/api/documents/${doc.id}`, { method: "GET" });
@@ -258,8 +263,9 @@ export function DocumentsClient({ ownerLabel, documents }: Props) {
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
                                 className="text-destructive"
+                                disabled={!isOwner}
                                 onClick={async () => {
-                                  if (busyId) return;
+                                  if (busyId || !isOwner) return;
                                   const ok = confirm("문서를 삭제하시겠습니까? 관련 대화/임베딩도 함께 삭제됩니다.");
                                   if (!ok) return;
                                   setBusyId(doc.id);
