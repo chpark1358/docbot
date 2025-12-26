@@ -53,14 +53,15 @@ FAQ 후보를 생성하세요.
 
 const model = process.env.CHAT_MODEL || "gpt-4o-mini";
 
-// Responses API 타입 미스매치 방지용 래퍼
+// JSON 포맷 강제 추출용 래퍼 (Chat Completions)
 const callJSON = async (messages: { role: "system" | "user"; content: string }[]) => {
-  const res = await (openai as any).responses.create({
+  const res = await openai.chat.completions.create({
     model,
-    input: messages,
+    messages,
+    temperature: 0,
     response_format: { type: "json_object" },
   });
-  return res.output_text ?? "{}";
+  return res.choices[0]?.message?.content ?? "{}";
 };
 
 export async function processTicket(rawId: number) {
