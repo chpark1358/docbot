@@ -73,10 +73,10 @@ export function NewChatComposer({ readyCount }: Props) {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
-                <Sparkles className="h-4 w-4" /> 업로드한 문서 전부를 한 번에 검색합니다.
+                <Sparkles className="h-4 w-4" /> 내 문서와 공유 문서를 한 번에 검색합니다.
               </div>
               <div className="text-xs text-slate-500">
-                {readyCount > 0 ? `현재 ${readyCount}개 문서가 검색 대상입니다.` : "먼저 문서를 업로드하고 처리가 끝나야 검색됩니다."}
+                {readyCount > 0 ? `현재 ${readyCount}개 문서가 검색 대상입니다.` : "먼저 문서를 업로드하거나 공유 문서를 확인하세요."}
               </div>
             </div>
             <div className="inline-flex overflow-hidden rounded-full border border-slate-200 bg-slate-50">
@@ -92,7 +92,7 @@ export function NewChatComposer({ readyCount }: Props) {
                   setMode("document");
                 }}
               >
-                내 문서 전체
+                문서 전체
               </button>
               <button
                 type="button"
