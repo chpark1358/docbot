@@ -57,6 +57,23 @@ const ensurePdfDomStubs = () => {
 };
 
 const loadPdfParse = async () => {
+  // 1) CJS require 우선 시도
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const req = eval("require") as NodeRequire;
+    const mod = req("pdf-parse");
+    if (typeof mod === "function") return mod as (data: Buffer) => Promise<{ text?: string }>;
+    if (typeof (mod as { default?: unknown }).default === "function") {
+      return (mod as { default: (data: Buffer) => Promise<{ text?: string }> }).default;
+    }
+    if (typeof (mod as { parse?: unknown }).parse === "function") {
+      return (mod as { parse: (data: Buffer) => Promise<{ text?: string }> }).parse;
+    }
+  } catch {
+    // ignore and fall through
+  }
+
+  // 2) ESM import fallback
   const mod = (await import("pdf-parse")) as unknown as Record<string, unknown>;
   const fn = (mod as { default?: unknown }).default ?? (mod as { parse?: unknown }).parse ?? mod;
   if (typeof fn === "function") return fn as (data: Buffer) => Promise<{ text?: string }>;
