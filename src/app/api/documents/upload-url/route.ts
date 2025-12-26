@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import mime from "mime";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES, STORAGE_BUCKET } from "@/lib/constants";
@@ -21,7 +20,18 @@ export async function POST(req: Request) {
   const fileName = typeof body?.fileName === "string" ? body.fileName : "";
   const fileSize = typeof body?.fileSize === "number" ? body.fileSize : 0;
   const mimeTypeInput = typeof body?.mimeType === "string" ? body.mimeType : "";
-  const mimeType = mimeTypeInput || mime.getType(fileName) || "application/octet-stream";
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  const extMime =
+    ext === "pdf"
+      ? "application/pdf"
+      : ext === "docx"
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : ext === "doc"
+          ? "application/msword"
+          : ext === "txt"
+            ? "text/plain"
+            : "";
+  const mimeType = mimeTypeInput || extMime || "application/octet-stream";
 
   if (!fileName || !fileSize) {
     return NextResponse.json({ error: "파일명과 크기가 필요합니다." }, { status: 400 });
@@ -34,12 +44,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const allowed = ALLOWED_MIME_TYPES.some((type) => mimeType === type || mimeType.startsWith(type));
+  const allowed = ALLOWED_MIME_TYPES.some((type) => mimeType === type || mimeType.startsWith(type.split("/")[0]));
   if (!allowed) {
     return NextResponse.json({ error: "지원하지 않는 파일 형식입니다. pdf, docx, txt만 업로드 가능합니다." }, { status: 400 });
   }
 
-  const ext = fileName.split(".").pop()?.toLowerCase();
   const safeExt = ext && /^[a-z0-9]+$/.test(ext) ? ext : "bin";
   const objectPath = `${user.id}/${crypto.randomUUID()}.${safeExt}`;
 
