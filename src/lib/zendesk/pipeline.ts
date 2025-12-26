@@ -21,6 +21,7 @@ const systemClean = `
   "environment_info": "..."
 }
 불확실하면 비워 둡니다.
+반드시 JSON 문자열로만 답하세요. JSON 외 다른 텍스트는 포함하지 마세요.
 `.trim();
 
 const systemIntent = `
@@ -32,6 +33,7 @@ const systemIntent = `
   "condition": "...",
   "suspected_cause": "..."
 }
+반드시 JSON 문자열로만 답하세요. JSON 외 다른 텍스트는 포함하지 마세요.
 `.trim();
 
 const systemSolution = `
@@ -40,6 +42,7 @@ const systemSolution = `
 {
   "solution_steps": ["1. ...", "2. ..."]
 }
+반드시 JSON 문자열로만 답하세요. JSON 외 다른 텍스트는 포함하지 마세요.
 `.trim();
 
 const systemFAQ = `
@@ -49,6 +52,7 @@ FAQ 후보를 생성하세요.
   "faq_question": "...",
   "faq_answer": "원인, 확인 방법, 조치 사항 순서로 작성"
 }
+반드시 JSON 문자열로만 답하세요. JSON 외 다른 텍스트는 포함하지 마세요.
 `.trim();
 
 const model = process.env.CHAT_MODEL || "gpt-4o-mini";
