@@ -100,6 +100,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   };
 
   useEffect(() => {
+    // 새 메시지가 추가될 때마다 마지막 사용자 질문 위치로 부드럽게 스크롤
     const timer = setTimeout(() => scrollToLastUserMessage(), 0);
     return () => clearTimeout(timer);
   }, [messages.length, scrollToLastUserMessage]);
