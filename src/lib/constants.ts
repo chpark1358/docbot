@@ -3,6 +3,7 @@ export const STORAGE_BUCKET = "documents";
 export const ALLOWED_MIME_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
   "text/plain",
 ];
 

@@ -22,7 +22,7 @@ type UploadResult = {
 };
 
 const MAX_FILES = 5;
-const ALLOWED_EXT = [".pdf", ".docx", ".txt"];
+const ALLOWED_EXT_REGEX = /\.(pdf|docx?|txt)$/i;
 
 const humanSize = (bytes: number) => {
   if (bytes === 0) return "0 B";
@@ -105,9 +105,9 @@ export function UploadForm({ onSuccess }: Props) {
         continue;
       }
       const mime = file.type || "";
-      const ext = file.name.split(".").pop()?.toLowerCase();
-      const hasExt = ext ? ALLOWED_EXT.some((e) => e === `.${ext}`) : false;
-      const allowed = ALLOWED_MIME_TYPES.some((t) => mime === t || mime.startsWith(t)) || hasExt;
+      const allowedMime = ALLOWED_MIME_TYPES.some((t) => mime === t || (mime && mime.startsWith(t.split("/")[0] + "/")));
+      const allowedExt = ALLOWED_EXT_REGEX.test(file.name);
+      const allowed = allowedMime || allowedExt || !mime; // mime이 비어도 확장자면 허용
       if (!allowed) {
         errors.push(`${file.name}: 지원하지 않는 형식`);
         continue;
@@ -119,10 +119,12 @@ export function UploadForm({ onSuccess }: Props) {
     setFiles(limited);
 
     if (errors.length) {
-      setError(`다음 파일은 제외되었습니다: ${errors.join(", ")}`);
+      setError(`제외된 파일: ${errors.join("; ")}`);
     }
     if (limited.length === 0) {
       setError(errors.length ? "선택한 파일이 모두 제외되었습니다." : "추가된 파일이 없습니다.");
+    } else {
+      setSuccess(`${limited.length}개 파일이 추가되었습니다.`);
     }
 
     return limited.length;
