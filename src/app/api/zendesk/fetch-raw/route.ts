@@ -13,11 +13,20 @@ export async function POST(request: Request) {
     } else if (limit) {
       query = query.limit(limit);
     } else {
-      query = query.limit(20);
+      query = query.limit(50);
     }
     const { data, error } = await query;
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ items: data ?? [] });
+
+    // 본문 스니펫 생성 (문자열화 후 앞부분 자르기)
+    const items = (data ?? []).map((d: any) => {
+      const rawText =
+        typeof d.body_json === "string" ? d.body_json : d.body_json ? JSON.stringify(d.body_json) : "";
+      const snippet = rawText.replace(/\s+/g, " ").slice(0, 400);
+      return { ...d, snippet };
+    });
+
+    return NextResponse.json({ items });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "알 수 없는 오류" }, { status: 500 });
   }
