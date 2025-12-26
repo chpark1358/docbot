@@ -84,7 +84,7 @@ export async function processTicket(rawId: number) {
     environment_info?: string;
   };
 
-  const { data: cleanRow } = await (supabase.from as any)("zendesk_clean")
+  const { data: cleanRow, error: cleanErr } = await (supabase.from as any)("zendesk_clean")
     .upsert(
       {
         raw_id: raw.id,
@@ -97,7 +97,8 @@ export async function processTicket(rawId: number) {
     .select()
     .maybeSingle();
 
-  if (!cleanRow) throw new Error("failed to upsert zendesk_clean");
+  if (cleanErr) throw new Error(`failed to upsert zendesk_clean: ${cleanErr.message}`);
+  if (!cleanRow) throw new Error("failed to upsert zendesk_clean: no row returned");
 
   // 2) 의도
   const intentJson = JSON.parse(
@@ -112,7 +113,7 @@ export async function processTicket(rawId: number) {
     suspected_cause?: string;
   };
 
-  const { data: intentRow } = await (supabase.from as any)("zendesk_intent")
+  const { data: intentRow, error: intentErr } = await (supabase.from as any)("zendesk_intent")
     .upsert(
       {
         clean_id: cleanRow.id,
@@ -125,7 +126,8 @@ export async function processTicket(rawId: number) {
     )
     .select()
     .maybeSingle();
-  if (!intentRow) throw new Error("failed to upsert zendesk_intent");
+  if (intentErr) throw new Error(`failed to upsert zendesk_intent: ${intentErr.message}`);
+  if (!intentRow) throw new Error("failed to upsert zendesk_intent: no row returned");
 
   // 3) 솔루션
   const solJson = JSON.parse(
@@ -135,7 +137,7 @@ export async function processTicket(rawId: number) {
     ]),
   ) as { solution_steps?: string[] };
 
-  const { data: solRow } = await (supabase.from as any)("zendesk_solution")
+  const { data: solRow, error: solErr } = await (supabase.from as any)("zendesk_solution")
     .upsert(
       {
         intent_id: intentRow.id,
@@ -145,7 +147,8 @@ export async function processTicket(rawId: number) {
     )
     .select()
     .maybeSingle();
-  if (!solRow) throw new Error("failed to upsert zendesk_solution");
+  if (solErr) throw new Error(`failed to upsert zendesk_solution: ${solErr.message}`);
+  if (!solRow) throw new Error("failed to upsert zendesk_solution: no row returned");
 
   // 4) FAQ 후보
   const faqJson = JSON.parse(
@@ -155,7 +158,7 @@ export async function processTicket(rawId: number) {
     ]),
   ) as { faq_question?: string; faq_answer?: string };
 
-  await (supabase.from as any)("zendesk_faq").upsert(
+  const { error: faqErr } = await (supabase.from as any)("zendesk_faq").upsert(
     {
       intent_id: intentRow.id,
       faq_question: faqJson.faq_question ?? "",
@@ -165,6 +168,7 @@ export async function processTicket(rawId: number) {
     },
     { onConflict: "intent_id" },
   );
+  if (faqErr) throw new Error(`failed to upsert zendesk_faq: ${faqErr.message}`);
 
   return { raw_id: raw.id, clean_id: cleanRow.id, intent_id: intentRow.id, solution_id: solRow.id };
 }
