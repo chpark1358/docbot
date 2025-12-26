@@ -44,7 +44,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const allowed = ALLOWED_MIME_TYPES.some((type) => mimeType === type || mimeType.startsWith(type.split("/")[0]));
+  const allowedExt = ["pdf", "doc", "docx", "txt"].includes(ext);
+  const allowed = allowedExt || ALLOWED_MIME_TYPES.some((type) => mimeType === type || mimeType.startsWith(type.split("/")[0]));
   if (!allowed) {
     return NextResponse.json({ error: "지원하지 않는 파일 형식입니다. pdf, docx, txt만 업로드 가능합니다." }, { status: 400 });
   }

@@ -4,6 +4,7 @@ export const ALLOWED_MIME_TYPES = [
   "application/pdf",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/msword",
+  "application/vnd.ms-word",
   "text/plain",
 ];
 

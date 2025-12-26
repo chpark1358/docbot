@@ -93,8 +93,14 @@ export const parseBufferToText = async (buffer: Buffer, mimeType: string): Promi
     case "pdf": {
       ensurePdfDomStubs(); // pdf-parse import 시점에 DOM 의존성을 만족시키기 위해 선행
       const parseFn = await loadPdfParse();
-      const result = await parseFn(buffer);
-      return result.text ?? "";
+      try {
+        const result = await parseFn(buffer);
+        return result.text ?? "";
+      } catch (err) {
+        // pdfjs/canvas 의존성 문제 시 실패하지 않고 빈 텍스트로 처리
+        console.warn("pdf parse failed, returning empty text", err);
+        return "";
+      }
     }
     case "docx": {
       const mammothModule = (await import("mammoth")) as unknown as { default?: MammothModule } & MammothModule;

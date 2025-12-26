@@ -22,7 +22,7 @@ type UploadResult = {
 };
 
 const MAX_FILES = 5;
-const ALLOWED_EXT_REGEX = /\.(pdf|docx?|txt)$/i;
+const ALLOWED_EXT_REGEX = /\.(pdf|docx?|txt|doc)$/i;
 
 const humanSize = (bytes: number) => {
   if (bytes === 0) return "0 B";
@@ -96,7 +96,7 @@ export function UploadForm({ onSuccess }: Props) {
     const incomingFiles = Array.from(incoming);
     if (!incomingFiles.length) return 0;
 
-    const filtered: File[] = [];
+    const kept: File[] = [];
     const errors: string[] = [];
 
     for (const file of incomingFiles) {
@@ -104,18 +104,15 @@ export function UploadForm({ onSuccess }: Props) {
         errors.push(`${file.name}: ${(file.size / (1024 * 1024)).toFixed(1)}MB (최대 ${(MAX_FILE_SIZE_BYTES / (1024 * 1024)).toFixed(0)}MB)`);
         continue;
       }
-      const mime = file.type || "";
-      const allowedMime = ALLOWED_MIME_TYPES.some((t) => mime === t || (mime && mime.startsWith(t.split("/")[0] + "/")));
       const allowedExt = ALLOWED_EXT_REGEX.test(file.name);
-      const allowed = allowedMime || allowedExt || !mime; // mime이 비어도 확장자면 허용
-      if (!allowed) {
-        errors.push(`${file.name}: 지원하지 않는 형식`);
+      if (!allowedExt) {
+        errors.push(`${file.name}: 확장자 미지원`);
         continue;
       }
-      filtered.push(file);
+      kept.push(file);
     }
 
-    const limited = filtered.slice(0, MAX_FILES);
+    const limited = kept.slice(0, MAX_FILES);
     setFiles(limited);
 
     if (errors.length) {

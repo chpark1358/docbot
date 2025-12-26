@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import mime from "mime";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES, STORAGE_BUCKET } from "@/lib/constants";
@@ -23,7 +22,18 @@ export async function POST(req: Request) {
   const fileName = typeof body?.fileName === "string" ? body.fileName : "";
   const size = typeof body?.size === "number" ? body.size : 0;
   const mimeTypeInput = typeof body?.mimeType === "string" ? body.mimeType : "";
-  const mimeType = mimeTypeInput || mime.getType(fileName) || "application/octet-stream";
+  const ext = fileName.split(".").pop()?.toLowerCase() || "";
+  const extMime =
+    ext === "pdf"
+      ? "application/pdf"
+      : ext === "docx"
+        ? "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        : ext === "doc"
+          ? "application/msword"
+          : ext === "txt"
+            ? "text/plain"
+            : "";
+  const mimeType = mimeTypeInput || extMime || "application/octet-stream";
 
   if (!storagePath || !storagePath.startsWith(`${user.id}/`)) {
     return NextResponse.json({ error: "유효하지 않은 경로입니다." }, { status: 400 });
@@ -40,7 +50,8 @@ export async function POST(req: Request) {
     );
   }
 
-  const allowed = ALLOWED_MIME_TYPES.some((type) => mimeType === type || mimeType.startsWith(type));
+  const allowedExt = ["pdf", "doc", "docx", "txt"].includes(ext);
+  const allowed = allowedExt || ALLOWED_MIME_TYPES.some((type) => mimeType === type || mimeType.startsWith(type.split("/")[0]));
   if (!allowed) {
     return NextResponse.json({ error: "지원하지 않는 파일 형식입니다. pdf, docx, txt만 업로드 가능합니다." }, { status: 400 });
   }
