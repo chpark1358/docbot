@@ -225,6 +225,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               style={{
                 scrollBehavior: "smooth",
                 paddingBottom: "180px",
+                maxHeight: "calc(100vh - 220px)",
               }}
             >
             {messages.length === 0 ? (
