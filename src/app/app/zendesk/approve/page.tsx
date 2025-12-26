@@ -31,6 +31,8 @@ export default function ZendeskApprovePage() {
   const [raws, setRaws] = useState<Record<number, RawPreview>>({});
   const [loading, setLoading] = useState(false);
   const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [ingestLoading, setIngestLoading] = useState(false);
+  const [processLoading, setProcessLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<"candidate" | "approved">("candidate");
 
@@ -103,6 +105,51 @@ export default function ZendeskApprovePage() {
     }
   };
 
+  const handleIngestOnly = async () => {
+    if (ingestLoading) return;
+    setIngestLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/zendesk/ingest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "status:solved status:closed",
+          months: 6,
+          persist: true,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error ?? `ingest 실패: ${res.status}`);
+      alert(`ingest 완료: ${data.count ?? 0}건`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "ingest 실행 중 오류");
+    } finally {
+      setIngestLoading(false);
+    }
+  };
+
+  const handleProcessOnly = async () => {
+    if (processLoading) return;
+    setProcessLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/zendesk/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ limit: 50 }),
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error ?? `process 실패: ${res.status}`);
+      alert(`process 완료: ${(data.results ?? []).length ?? 0}건`);
+      void load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "process 실행 중 오류");
+    } finally {
+      setProcessLoading(false);
+    }
+  };
+
   const handleAction = async (faq_id: number, mode: "approve" | "reject") => {
     try {
       const res = await fetch("/api/zendesk/approve", {
@@ -129,10 +176,18 @@ export default function ZendeskApprovePage() {
         <h1 className="text-2xl font-semibold">FAQ 후보 승인</h1>
         <p className="text-sm text-muted-foreground">자동 생성된 FAQ 후보를 승인 또는 반려합니다.</p>
         <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-          <Button variant="outline" size="sm" onClick={handlePipeline} disabled={pipelineLoading}>
-            {pipelineLoading ? "파이프라인 실행 중..." : "티켓 수집→정제→후보 적재 실행"}
-          </Button>
-          <span>※ ZENDESK_SUBDOMAIN / ZENDESK_EMAIL / ZENDESK_API_TOKEN 환경변수 필요</span>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={handleIngestOnly} disabled={ingestLoading}>
+              {ingestLoading ? "ingest 실행 중..." : "1) 티켓 수집(ingest)"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleProcessOnly} disabled={processLoading}>
+              {processLoading ? "process 실행 중..." : "2) 정제/후보 생성(process)"}
+            </Button>
+            <Button variant="outline" size="sm" onClick={handlePipeline} disabled={pipelineLoading}>
+              {pipelineLoading ? "파이프라인 실행 중..." : "원클릭 실행(ingest→process)"}
+            </Button>
+          </div>
+          <span>※ ZENDESK_SUBDOMAIN / ZENDESK_EMAIL / ZENDESK_API_TOKEN / SUPABASE_SERVICE_ROLE_KEY 필요</span>
         </div>
       </div>
       <div className="flex items-center gap-2">
