@@ -19,7 +19,7 @@ export default async function ChatHomePage() {
   const { count: readyCount } = await supabase
     .from("documents")
     .select("id", { count: "exact", head: true })
-    .eq("user_id", user.id)
+    .or(`user_id.eq.${user.id},is_shared.eq.true`)
     .eq("status", "ready")
     .neq("mime_type", VIRTUAL_CHAT_MIME_TYPE)
     .neq("mime_type", ALL_DOCS_MIME_TYPE);
@@ -43,7 +43,7 @@ export default async function ChatHomePage() {
             만나서 반가워요! <span className="text-primary">{name}</span>님
           </h1>
           <p className="mx-auto max-w-xl text-sm leading-6 text-muted-foreground">
-            업로드한 모든 문서를 통합해서 답변해요. 웹 검색 모드로 최신 정보도 함께 물어볼 수 있습니다.
+            내 문서와 공유 문서를 모두 통합해서 답변해요. 웹 검색 모드로 최신 정보도 함께 물어볼 수 있습니다.
           </p>
         </div>
 
