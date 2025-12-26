@@ -18,6 +18,7 @@ export default function ZendeskPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [pipelineLoading, setPipelineLoading] = useState(false);
   const [items, setItems] = useState<
     Array<{
       id: number | string;
@@ -113,6 +114,30 @@ export default function ZendeskPage() {
     }
   }, [downloading, mode, org, requester, status]);
 
+  const handlePipeline = useCallback(async () => {
+    if (pipelineLoading) return;
+    setPipelineLoading(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const res = await fetch("/api/zendesk/run-pipeline", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(data?.error ?? `파이프라인 실패: ${res.status}`);
+      }
+      setMessage("파이프라인 실행 완료: 티켓 수집 → 정제 → 후보 적재가 완료되었습니다. 승인 화면에서 확인하세요.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "파이프라인 실행 중 오류가 발생했습니다.");
+    } finally {
+      setPipelineLoading(false);
+    }
+  }, [pipelineLoading]);
+
   return (
     <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 px-6 py-8">
       <div className="space-y-1">
@@ -193,6 +218,9 @@ export default function ZendeskPage() {
         <Button onClick={handleSubmit}>요약 요청</Button>
         <Button variant="secondary" onClick={handleDownload} disabled={downloading}>
           엑셀 다운로드
+        </Button>
+        <Button variant="outline" onClick={handlePipeline} disabled={pipelineLoading}>
+          {pipelineLoading ? "파이프라인 실행 중..." : "FAQ 후보 파이프라인 실행"}
         </Button>
         <Button
           variant="outline"
