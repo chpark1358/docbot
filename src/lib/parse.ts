@@ -3,6 +3,7 @@ type MimeKind = "pdf" | "docx" | "txt" | "unknown";
 const detectKind = (mimeType: string): MimeKind => {
   if (mimeType.includes("pdf")) return "pdf";
   if (mimeType.includes("wordprocessingml")) return "docx";
+  if (mimeType.includes("haansoft")) return "docx";
   if (mimeType.startsWith("text/")) return "txt";
   return "unknown";
 };
