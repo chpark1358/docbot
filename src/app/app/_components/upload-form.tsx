@@ -280,7 +280,7 @@ export function UploadForm({ onSuccess }: Props) {
             id="file"
             name="file"
             type="file"
-            accept=".pdf,.docx,.txt"
+            accept="" // 필터는 코드에서 처리하므로 비워서 선택 제한을 최소화
             className="hidden"
             multiple
             onChange={(event) => {
@@ -292,6 +292,8 @@ export function UploadForm({ onSuccess }: Props) {
                   // 동일 파일 재선택 시 안내
                   setError("추가된 파일이 없습니다. 다른 파일을 선택하거나 새로 업로드를 시도하세요.");
                 }
+              } else {
+                setError("파일을 선택하지 않았습니다.");
               }
               event.currentTarget.value = "";
             }}
