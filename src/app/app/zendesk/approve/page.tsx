@@ -26,6 +26,59 @@ type RawPreview = {
   body_json?: unknown;
 };
 
+const renderAnswer = (text: string | null) => {
+  if (!text) return <span className="text-muted-foreground">(답변 없음)</span>;
+
+  const sections = [
+    { label: "원인", key: /원인[:：]/i },
+    { label: "확인 방법", key: /확인[ ]?방법[:：]/i },
+    { label: "조치 사항", key: /조치[ ]?사항[:：]/i },
+  ];
+
+  // 섹션별로 분리
+  const chunks: { label: string; body: string }[] = [];
+  let remaining = text;
+  for (const { label, key } of sections) {
+    const match = remaining.match(key);
+    if (match) {
+      const start = match.index ?? 0;
+      const before = remaining.slice(0, start).trim();
+      if (before) {
+        // 이전 누락 구간을 일반 텍스트로 추가
+        chunks.push({ label: "기타", body: before });
+      }
+      const after = remaining.slice(start + match[0].length).trim();
+      // 다음 키워드 위치 찾기
+      let nextPos = after.length;
+      for (const { key: nextKey } of sections) {
+        const m = after.match(nextKey);
+        if (m && m.index !== undefined && m.index < nextPos) nextPos = m.index;
+      }
+      const body = after.slice(0, nextPos).trim();
+      chunks.push({ label, body });
+      remaining = after.slice(nextPos);
+    }
+  }
+  if (remaining.trim()) {
+    chunks.push({ label: "기타", body: remaining.trim() });
+  }
+
+  if (!chunks.length) {
+    chunks.push({ label: "내용", body: text });
+  }
+
+  return (
+    <div className="grid gap-2">
+      {chunks.map((c, idx) => (
+        <div key={`${c.label}-${idx}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+          <div className="text-xs font-semibold text-slate-700">[{c.label}]</div>
+          <div className="mt-1 text-sm text-slate-800 whitespace-pre-wrap">{c.body}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 export default function ZendeskApprovePage() {
   const [items, setItems] = useState<FaqItem[]>([]);
   const [raws, setRaws] = useState<Record<number, RawPreview>>({});
@@ -231,7 +284,7 @@ export default function ZendeskApprovePage() {
                 </div>
               </div>
                 <Separator className="my-3" />
-              <div className="text-sm text-slate-700 leading-6 whitespace-pre-wrap">{item.faq_answer || "(답변 없음)"}</div>
+              <div className="text-sm text-slate-700 leading-6">{renderAnswer(item.faq_answer)}</div>
               {raw ? (
                 <div className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-700">
                   <div className="font-semibold text-slate-800">원본 티켓 #{raw.id}</div>
