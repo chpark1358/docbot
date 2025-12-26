@@ -212,7 +212,7 @@ export async function POST(req: Request) {
     const { count: readyCount } = await supabase
       .from("documents")
       .select("id", { count: "exact", head: true })
-      .eq("user_id", user.id)
+      .or(`user_id.eq.${user.id},is_shared.eq.true`)
       .eq("status", "ready")
       .neq("mime_type", VIRTUAL_CHAT_MIME_TYPE)
       .neq("mime_type", ALL_DOCS_MIME_TYPE);
@@ -231,9 +231,9 @@ export async function POST(req: Request) {
   // 문서 소유 여부 확인
   const { data: document, error: docError } = await supabase
     .from("documents")
-    .select("id, user_id, title, status, mime_type")
+    .select("id, user_id, title, status, mime_type, is_shared")
     .eq("id", documentId)
-    .eq("user_id", user.id)
+    .or(`user_id.eq.${user.id},is_shared.eq.true`)
     .single();
 
   if (docError || !document) {
