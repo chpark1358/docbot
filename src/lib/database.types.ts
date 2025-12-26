@@ -37,6 +37,7 @@ export interface Database {
           size: number;
           status: "queued" | "processing" | "ready" | "failed";
           error_message: string | null;
+          is_shared: boolean | null;
           created_at: string;
           updated_at: string;
         };
@@ -49,6 +50,7 @@ export interface Database {
           size: number;
           status?: "queued" | "processing" | "ready" | "failed";
           error_message?: string | null;
+          is_shared?: boolean | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -61,6 +63,7 @@ export interface Database {
           size?: number;
           status?: "queued" | "processing" | "ready" | "failed";
           error_message?: string | null;
+          is_shared?: boolean | null;
           created_at?: string;
           updated_at?: string;
         };

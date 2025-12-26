@@ -26,6 +26,7 @@ type DocumentRow = {
   updated_at: string;
   error_message: string | null;
   user_id: string;
+  is_shared: boolean | null;
 };
 
 type Props = {

@@ -17,7 +17,7 @@ export default async function DocumentsPage() {
 
   const { data: docs } = await supabase
     .from("documents")
-    .select("id, title, status, size, mime_type, created_at, updated_at, error_message, user_id")
+    .select("id, title, status, size, mime_type, created_at, updated_at, error_message, user_id, is_shared")
     .neq("status", "failed")
     .neq("mime_type", VIRTUAL_CHAT_MIME_TYPE)
     .neq("mime_type", ALL_DOCS_MIME_TYPE)
