@@ -5,7 +5,7 @@ export async function POST(request: Request) {
   const supabase = createServiceClient();
   const { status, limit } = (await request.json().catch(() => ({}))) as { status?: "candidate" | "approved"; limit?: number };
   try {
-    const q = (supabase.from as any)("zendesk_faq").select("*").order("created_at", { ascending: false });
+    const q = (supabase.from as any)("zendesk_faq").select("*").order("id", { ascending: true });
     if (status === "candidate") q.eq("candidate", true).eq("approved", false);
     if (status === "approved") q.eq("approved", true);
     if (limit) q.limit(limit);
