@@ -67,12 +67,36 @@ const renderAnswer = (text: string | null) => {
     chunks.push({ label: "내용", body: text });
   }
 
+  const renderBody = (body: string) => {
+    const lines = body
+      .split(/\n+/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0);
+    const numbered = lines.every((l) => /^\d+[\.\)]\s*/.test(l));
+    if (numbered) {
+      return (
+        <ol className="ml-4 list-decimal space-y-1 text-sm text-slate-800">
+          {lines.map((l, idx) => (
+            <li key={idx} className="leading-6">
+              {l.replace(/^\d+[\.\)]\s*/, "")}
+            </li>
+          ))}
+        </ol>
+      );
+    }
+    return (
+      <div className="text-sm text-slate-800 whitespace-pre-wrap leading-6">
+        {body}
+      </div>
+    );
+  };
+
   return (
     <div className="grid gap-2">
       {chunks.map((c, idx) => (
         <div key={`${c.label}-${idx}`} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
           <div className="text-xs font-semibold text-slate-700">[{c.label}]</div>
-          <div className="mt-1 text-sm text-slate-800 whitespace-pre-wrap">{c.body}</div>
+          <div className="mt-1">{renderBody(c.body)}</div>
         </div>
       ))}
     </div>
