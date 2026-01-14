@@ -16,13 +16,7 @@ type StatusOption = {
 
 const STATUS_OPTIONS: StatusOption[] = [
   { value: "", label: "전체" },
-  { value: "status:new", label: "신규" },
-  { value: "status:open", label: "열림" },
-  { value: "status:pending", label: "대기" },
-  { value: "status:hold", label: "보류" },
-  { value: "status:solved", label: "해결" },
-  { value: "status:closed", label: "닫힘" },
-  // 커스텀 상태
+  // 커스텀 상태 (custom_status_id)
   { value: "custom_status_id:16839629222809", label: "등록" },
   { value: "custom_status_id:17042756870553", label: "일정협의완료" },
   { value: "custom_status_id:17272735018009", label: "검수중" },
@@ -36,7 +30,7 @@ export default function ZendeskPage() {
   const [mode, setMode] = useState<Mode>("org");
   const [org, setOrg] = useState("");
   const [requester, setRequester] = useState("");
-  const [status, setStatus] = useState("status:solved status:closed");
+  const [status, setStatus] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -45,11 +39,12 @@ export default function ZendeskPage() {
   const [supportDownloading, setSupportDownloading] = useState(false);
   const [items, setItems] = useState<
     Array<{
-      id: number | string;
-      subject?: unknown;
-      status?: unknown;
-      priority?: unknown;
-      created_at?: unknown;
+        id: number | string;
+        subject?: unknown;
+        status?: unknown;
+        custom_status_id?: unknown;
+        priority?: unknown;
+        created_at?: unknown;
       updated_at?: unknown;
       assignee_id?: unknown;
       requester_id?: unknown;
@@ -61,7 +56,16 @@ export default function ZendeskPage() {
     }>
   >([]);
 
-  const statusToKo = (s: unknown) => {
+  const statusToKo = (s: unknown, customId?: unknown) => {
+    const cid = String(customId ?? "").toLowerCase();
+    if (cid === "16839629222809") return "등록";
+    if (cid === "17042756870553") return "일정협의완료";
+    if (cid === "17272735018009") return "검수중";
+    if (cid === "18850933016601") return "이관";
+    if (cid === "16839565725209") return "보류";
+    if (cid === "26091144491033") return "보류(고객사 안내 필요)";
+    if (cid === "16839581918361") return "해결";
+
     const v = String(s || "").toLowerCase();
     if (v === "new") return "신규";
     if (v === "open") return "열림";
@@ -69,13 +73,6 @@ export default function ZendeskPage() {
     if (v === "hold") return "보류";
     if (v === "solved") return "해결";
     if (v === "closed") return "닫힘";
-    if (v === "custom_status_id:16839629222809") return "등록";
-    if (v === "custom_status_id:17042756870553") return "일정협의완료";
-    if (v === "custom_status_id:17272735018009") return "검수중";
-    if (v === "custom_status_id:18850933016601") return "이관";
-    if (v === "custom_status_id:16839565725209") return "보류";
-    if (v === "custom_status_id:26091144491033") return "보류(고객사 안내 필요)";
-    if (v === "custom_status_id:16839581918361") return "해결";
     return String(s || "");
   };
 

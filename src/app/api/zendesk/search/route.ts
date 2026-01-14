@@ -71,6 +71,7 @@ export async function POST(request: Request) {
         id: r.id,
         subject: r.subject,
         status: r.status,
+        custom_status_id: (r as Record<string, unknown>).custom_status_id,
         priority: r.priority,
         created_at: r.created_at,
         updated_at: r.updated_at,
