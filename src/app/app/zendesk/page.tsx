@@ -262,13 +262,11 @@ export default function ZendeskPage() {
           value={status}
           onChange={(e) => setStatus(e.target.value)}
         >
-          <option value="">전체</option>
-          <option value="status<closed">미해결 (닫힘 제외)</option>
-          <option value="status<solved">진행중/대기 (해결/닫힘 제외)</option>
-          <option value="status:open">열림만</option>
-          <option value="status:pending">보류만</option>
-          <option value="status:solved">해결됨</option>
-          <option value="status:closed">닫힘</option>
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
         <p className="text-xs text-muted-foreground">필요하면 검색 후 상태를 추가로 수정해 사용하세요.</p>
       </div>
