@@ -10,6 +10,7 @@ type SupportBody = {
   status?: string; // 예: "status:solved status:closed"
   months?: number; // 최근 N개월
   product_field_id?: number; // 커스텀 필드 ID (문의제품)
+  handler_field_id?: number; // 커스텀 필드 ID (티켓처리자)
   label?: string; // 파일명에 쓸 라벨
 };
 
@@ -71,6 +72,8 @@ export async function POST(request: Request) {
   const months = body.months ?? 6;
   const productFieldEnv = process.env.ZENDESK_PRODUCT_FIELD_ID;
   const productFieldId = body.product_field_id ?? (productFieldEnv ? Number(productFieldEnv) : undefined);
+  const handlerFieldEnv = process.env.ZENDESK_HANDLER_FIELD_ID;
+  const handlerFieldId = body.handler_field_id ?? (handlerFieldEnv ? Number(handlerFieldEnv) : undefined);
 
   // 날짜 필터
   const from = new Date();
@@ -157,12 +160,20 @@ export async function POST(request: Request) {
       const oid = r.organization_id as string | number | undefined;
 
       let product = "";
+      let handler = "";
       const customFields = Array.isArray((r as any).custom_fields) ? ((r as any).custom_fields as Array<Record<string, unknown>>) : [];
       if (productFieldId && customFields.length) {
         const found = customFields.find((f) => Number((f as any).id) === Number(productFieldId));
         if (found) {
           const val = (found as any).value;
           product = typeof val === "string" ? val : Array.isArray(val) ? val.join(", ") : "";
+        }
+      }
+      if (handlerFieldId && customFields.length) {
+        const found = customFields.find((f) => Number((f as any).id) === Number(handlerFieldId));
+        if (found) {
+          const val = (found as any).value;
+          handler = typeof val === "string" ? val : Array.isArray(val) ? val.join(", ") : "";
         }
       }
 
@@ -175,7 +186,7 @@ export async function POST(request: Request) {
         phone: requester?.phone ?? "",
         product,
         subject: r.subject ?? "",
-        assignee: assignee?.name ?? assignee?.email ?? "",
+        assignee: handler || assignee?.name || assignee?.email || "",
       };
     });
 
