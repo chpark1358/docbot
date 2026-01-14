@@ -19,6 +19,7 @@ export default function ZendeskPage() {
   const [error, setError] = useState<string | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [pipelineLoading, setPipelineLoading] = useState(false);
+  const [supportDownloading, setSupportDownloading] = useState(false);
   const [items, setItems] = useState<
     Array<{
       id: number | string;
@@ -113,6 +114,35 @@ export default function ZendeskPage() {
       setDownloading(false);
     }
   }, [downloading, mode, org, requester, status]);
+
+  const handleSupportDownload = useCallback(async () => {
+    if (supportDownloading) return;
+    setSupportDownloading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/zendesk/export-support", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, months: 6 }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error ?? `다운로드 실패: ${res.status}`);
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const today = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `support_history_${today}.xlsx`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "파일 생성 중 오류가 발생했습니다.");
+    } finally {
+      setSupportDownloading(false);
+    }
+  }, [status, supportDownloading]);
 
   const handlePipeline = useCallback(async () => {
     if (pipelineLoading) return;
@@ -219,6 +249,9 @@ export default function ZendeskPage() {
         <Button variant="secondary" onClick={handleDownload} disabled={downloading}>
           엑셀 다운로드
         </Button>
+        <Button variant="secondary" onClick={handleSupportDownload} disabled={supportDownloading}>
+          기술지원 이력 엑셀
+        </Button>
         <Button variant="outline" onClick={handlePipeline} disabled={pipelineLoading}>
           {pipelineLoading ? "파이프라인 실행 중..." : "FAQ 후보 파이프라인 실행"}
         </Button>
@@ -237,6 +270,7 @@ export default function ZendeskPage() {
         </Button>
         {loading ? <span className="text-sm text-muted-foreground">불러오는 중...</span> : null}
         {downloading ? <span className="text-sm text-muted-foreground">엑셀 생성 중...</span> : null}
+        {supportDownloading ? <span className="text-sm text-muted-foreground">기술지원 엑셀 생성 중...</span> : null}
       </div>
 
       {message ? (
