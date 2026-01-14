@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 
+type Mode = "org" | "requester";
+
 type SupportBody = {
+  mode?: Mode;
+  org?: string;
+  requester?: string;
   status?: string; // 예: "status:solved status:closed"
   months?: number; // 최근 N개월
   product_field_id?: number; // 커스텀 필드 ID (문의제품)
+  label?: string; // 파일명에 쓸 라벨
 };
 
 const statusLabel = (s: unknown) => {
@@ -26,6 +32,18 @@ const statusLabel = (s: unknown) => {
   }
 };
 
+const buildQuery = ({ mode, org, requester, status }: { mode: Mode; org: string; requester: string; status: string }) => {
+  const parts: string[] = ["type:ticket"];
+  if (status) parts.push(status);
+  if (mode === "org" && org) {
+    parts.push(`organization:${org.includes("*") ? org : `"${org}"`}`);
+  }
+  if (mode === "requester" && requester) {
+    parts.push(`requester:${requester.includes("@") ? `"${requester}"` : requester}`);
+  }
+  return parts.join(" ");
+};
+
 export async function POST(request: Request) {
   const subdomain = process.env.ZENDESK_SUBDOMAIN;
   const email = process.env.ZENDESK_EMAIL;
@@ -42,8 +60,15 @@ export async function POST(request: Request) {
     body = {};
   }
 
+  const mode: Mode = body.mode === "requester" ? "requester" : "org";
+  const org = (body.org ?? "").trim();
+  const requester = (body.requester ?? "").trim();
+  const status = (body.status ?? "status:solved status:closed").trim();
+  const labelRaw = (body.label ?? "").trim();
+  const label = labelRaw || (mode === "org" ? org || "all" : requester || "all");
+  const safeLabel = label.replace(/[^a-zA-Z0-9가-힣_-]+/g, "_") || "all";
+
   const months = body.months ?? 6;
-  const status = body.status ?? "status:solved status:closed";
   const productFieldEnv = process.env.ZENDESK_PRODUCT_FIELD_ID;
   const productFieldId = body.product_field_id ?? (productFieldEnv ? Number(productFieldEnv) : undefined);
 
@@ -51,9 +76,7 @@ export async function POST(request: Request) {
   const from = new Date();
   from.setMonth(from.getMonth() - months);
 
-  const parts: string[] = ["type:ticket", status];
-  parts.push(`updated>=${from.toISOString().slice(0, 10)}`);
-  const query = parts.join(" ");
+  const query = `${buildQuery({ mode, org, requester, status })} updated>=${from.toISOString().slice(0, 10)}`;
 
   const auth = Buffer.from(`${email}/token:${token}`).toString("base64");
 
@@ -206,11 +229,10 @@ export async function POST(request: Request) {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="support_history_${today}.xlsx"`,
+        "Content-Disposition": `attachment; filename="zendesk_${safeLabel}_${today}_기술지원_이력.xlsx"`,
       },
     });
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : "알 수 없는 오류" }, { status: 500 });
   }
 }
-

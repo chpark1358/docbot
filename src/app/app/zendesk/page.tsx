@@ -123,7 +123,14 @@ export default function ZendeskPage() {
       const res = await fetch("/api/zendesk/export-support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status, months: 6 }),
+        body: JSON.stringify({
+          mode,
+          org,
+          requester,
+          status,
+          label: mode === "org" ? org : requester,
+          months: 6,
+        }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
