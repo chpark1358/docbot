@@ -225,11 +225,14 @@ export async function POST(request: Request) {
 
     const buffer = await wb.xlsx.writeBuffer();
     const today = new Date().toISOString().slice(0, 10);
+    const baseName = `zendesk_${safeLabel}_${today}_기술지원_이력.xlsx`;
+    const encodedName = encodeURIComponent(baseName);
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-        "Content-Disposition": `attachment; filename="zendesk_${safeLabel}_${today}_기술지원_이력.xlsx"`,
+        // RFC 5987 방식으로 UTF-8 파일명 전달, ASCII 폴백도 함께 제공
+        "Content-Disposition": `attachment; filename="support_history.xlsx"; filename*=UTF-8''${encodedName}`,
       },
     });
   } catch (err) {
