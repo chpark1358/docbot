@@ -179,13 +179,20 @@ export async function POST(request: Request) {
 
       const requester = rid ? usersMap.get(rid) : undefined;
       const assignee = aid ? usersMap.get(aid) : undefined;
+      // 문의 내용에서 [고객사명] 제거
+      const orgName = oid ? orgMap.get(oid) ?? oid : "";
+      let subject = r.subject ?? "";
+      if (orgName && typeof subject === "string") {
+        const re = new RegExp(`\\[\\s*${orgName}\\s*\\]`, "gi");
+        subject = subject.replace(re, "").trim();
+      }
 
       return {
         created_at: r.created_at,
-        customer: oid ? orgMap.get(oid) ?? oid : "",
+        customer: orgName,
         phone: requester?.phone ?? "",
         product,
-        subject: r.subject ?? "",
+        subject,
         assignee: handler || assignee?.name || assignee?.email || "",
       };
     });
