@@ -23,13 +23,13 @@ const STATUS_OPTIONS: StatusOption[] = [
   { value: "status:solved", label: "해결" },
   { value: "status:closed", label: "닫힘" },
   // 커스텀 상태
-  { value: "custom_status:16839629222809", label: "등록" },
-  { value: "custom_status:17042756870553", label: "일정협의완료" },
-  { value: "custom_status:17272735018009", label: "검수중" },
-  { value: "custom_status:18850933016601", label: "이관" },
-  { value: "custom_status:16839565725209", label: "보류" },
-  { value: "custom_status:26091144491033", label: "보류(고객사 안내 필요)" },
-  { value: "custom_status:16839581918361", label: "해결" },
+  { value: "custom_status_id:16839629222809", label: "등록" },
+  { value: "custom_status_id:17042756870553", label: "일정협의완료" },
+  { value: "custom_status_id:17272735018009", label: "검수중" },
+  { value: "custom_status_id:18850933016601", label: "이관" },
+  { value: "custom_status_id:16839565725209", label: "보류" },
+  { value: "custom_status_id:26091144491033", label: "보류(고객사 안내 필요)" },
+  { value: "custom_status_id:16839581918361", label: "해결" },
 ];
 
 export default function ZendeskPage() {
@@ -69,13 +69,13 @@ export default function ZendeskPage() {
     if (v === "hold") return "보류";
     if (v === "solved") return "해결";
     if (v === "closed") return "닫힘";
-    if (v === "custom_status:16839629222809") return "등록";
-    if (v === "custom_status:17042756870553") return "일정협의완료";
-    if (v === "custom_status:17272735018009") return "검수중";
-    if (v === "custom_status:18850933016601") return "이관";
-    if (v === "custom_status:16839565725209") return "보류";
-    if (v === "custom_status:26091144491033") return "보류(고객사 안내 필요)";
-    if (v === "custom_status:16839581918361") return "해결";
+    if (v === "custom_status_id:16839629222809") return "등록";
+    if (v === "custom_status_id:17042756870553") return "일정협의완료";
+    if (v === "custom_status_id:17272735018009") return "검수중";
+    if (v === "custom_status_id:18850933016601") return "이관";
+    if (v === "custom_status_id:16839565725209") return "보류";
+    if (v === "custom_status_id:26091144491033") return "보류(고객사 안내 필요)";
+    if (v === "custom_status_id:16839581918361") return "해결";
     return String(s || "");
   };
 
