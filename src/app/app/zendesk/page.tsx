@@ -39,22 +39,18 @@ export default function ZendeskPage() {
   >([]);
 
   const statusToKo = (s: unknown) => {
-    switch (String(s || "").toLowerCase()) {
-      case "new":
-        return "신규";
-      case "open":
-        return "열림";
-      case "pending":
-        return "대기";
-      case "hold":
-        return "보류";
-      case "solved":
-        return "해결";
-      case "closed":
-        return "닫힘";
-      default:
-        return String(s || "");
-    }
+    const v = String(s || "").toLowerCase();
+    if (v === "new") return "신규";
+    if (v === "open") return "열림";
+    if (v === "pending") return "대기";
+    if (v === "hold") return "보류";
+    if (v === "solved") return "해결";
+    if (v === "closed") return "닫힘";
+    if (v.includes("이관")) return "이관";
+    if (v.includes("신규")) return "신규";
+    if (v.includes("일정")) return "일정협의완료";
+    if (v.includes("검수")) return "검수중";
+    return String(s || "");
   };
 
   const handleSubmit = useCallback(async () => {
