@@ -68,6 +68,7 @@ export async function POST(request: Request) {
   const labelRaw = (body.label ?? "").trim();
   const label = labelRaw || (mode === "org" ? org || "all" : requester || "all");
   const safeLabel = label.replace(/[^a-zA-Z0-9가-힣_-]+/g, "_") || "all";
+  const asciiLabel = safeLabel.replace(/[^\w-]+/g, "_") || "all";
 
   const months = body.months ?? 6;
   const productFieldEnv = process.env.ZENDESK_PRODUCT_FIELD_ID ?? "32000684227225";
@@ -167,6 +168,7 @@ export async function POST(request: Request) {
         if (found) {
           const val = (found as any).value;
           product = typeof val === "string" ? val : Array.isArray(val) ? val.join(", ") : "";
+          product = product.replace(/\.+$/, "").trim();
         }
       }
       if (handlerFieldId && customFields.length) {
@@ -174,6 +176,7 @@ export async function POST(request: Request) {
         if (found) {
           const val = (found as any).value;
           handler = typeof val === "string" ? val : Array.isArray(val) ? val.join(", ") : "";
+          handler = handler.replace(/_?처리자/gi, "").trim();
         }
       }
 
@@ -222,7 +225,7 @@ export async function POST(request: Request) {
         phone: row.phone ?? "",
         product: row.product ?? "",
         subject: row.subject ?? "",
-        assignee: row.assignee ?? "",
+        assignee: row.assignee ? String(row.assignee).replace(/_?처리자/gi, "").trim() : "",
       });
     });
 
@@ -243,14 +246,15 @@ export async function POST(request: Request) {
 
     const buffer = await wb.xlsx.writeBuffer();
     const today = new Date().toISOString().slice(0, 10);
-    const baseName = `zendesk_${safeLabel}_${today}_기술지원_이력.xlsx`;
-    const encodedName = encodeURIComponent(baseName);
+    const utf8Name = `zendesk_${safeLabel}_${today}_기술지원_이력.xlsx`;
+    const asciiName = `zendesk_${asciiLabel}_${today}_support.xlsx`;
+    const encodedName = encodeURIComponent(utf8Name);
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         // RFC 5987 방식으로 UTF-8 파일명 전달, ASCII 폴백도 함께 제공
-        "Content-Disposition": `attachment; filename="support_history.xlsx"; filename*=UTF-8''${encodedName}`,
+        "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodedName}`,
       },
     });
   } catch (err) {
