@@ -70,9 +70,9 @@ export async function POST(request: Request) {
   const safeLabel = label.replace(/[^a-zA-Z0-9가-힣_-]+/g, "_") || "all";
 
   const months = body.months ?? 6;
-  const productFieldEnv = process.env.ZENDESK_PRODUCT_FIELD_ID;
+  const productFieldEnv = process.env.ZENDESK_PRODUCT_FIELD_ID ?? "32000684227225";
   const productFieldId = body.product_field_id ?? (productFieldEnv ? Number(productFieldEnv) : undefined);
-  const handlerFieldEnv = process.env.ZENDESK_HANDLER_FIELD_ID;
+  const handlerFieldEnv = process.env.ZENDESK_HANDLER_FIELD_ID ?? "28476275807129";
   const handlerFieldId = body.handler_field_id ?? (handlerFieldEnv ? Number(handlerFieldEnv) : undefined);
 
   // 날짜 필터
