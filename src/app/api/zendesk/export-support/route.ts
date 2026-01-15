@@ -100,25 +100,31 @@ export async function POST(request: Request) {
   };
 
   try {
-    const searchUrl = `https://${subdomain}.zendesk.com/api/v2/search.json?query=${encodeURIComponent(query)}&per_page=200`;
-    const res = await fetch(searchUrl, {
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
+    let searchUrl = `https://${subdomain}.zendesk.com/api/v2/search.json?query=${encodeURIComponent(query)}&per_page=200`;
+    const items: Array<Record<string, unknown>> = [];
 
-    if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json(
-        { error: `Zendesk 오류: ${res.status} ${res.statusText}`, detail: text.slice(0, 500) },
-        { status: res.status },
-      );
+    // 페이지네이션 따라가기 (next_page) 최대 5페이지(1000건) 정도 안전장치
+    for (let i = 0; i < 5 && searchUrl; i += 1) {
+      const res = await fetch(searchUrl, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        return NextResponse.json(
+          { error: `Zendesk 오류: ${res.status} ${res.statusText}`, detail: text.slice(0, 500) },
+          { status: res.status },
+        );
+      }
+
+      const data = (await res.json()) as { results?: Array<Record<string, unknown>>; next_page?: string | null };
+      if (Array.isArray(data.results)) items.push(...data.results);
+      searchUrl = data.next_page ?? "";
     }
-
-    const data = (await res.json()) as { results?: Array<Record<string, unknown>> };
-    const items = data.results ?? [];
 
     // 사용자/조직 ID 수집
     const requesterIds = Array.from(new Set(items.map((i) => i.requester_id).filter(Boolean))) as (string | number)[];
