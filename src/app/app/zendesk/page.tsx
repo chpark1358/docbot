@@ -148,7 +148,7 @@ export default function ZendeskPage() {
           requester,
           status,
           label: mode === "org" ? org : requester,
-          months: 6,
+          // months를 보내지 않음: 검색 화면과 동일하게 전체 기간 대상
         }),
       });
       if (!res.ok) {
