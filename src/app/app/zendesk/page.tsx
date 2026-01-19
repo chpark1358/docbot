@@ -214,7 +214,7 @@ export default function ZendeskPage() {
   }, [pipelineLoading]);
 
   return (
-    <div className="mx-auto flex h-full w-full max-w-6xl flex-col gap-6 px-6 py-8">
+    <div className="mx-auto flex h-full w-full max-w-[1400px] flex-col gap-6 px-6 py-8">
       <div className="space-y-1">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Zendesk</p>
         <h1 className="text-2xl font-semibold tracking-tight">티켓 요약/내보내기 (프리셋)</h1>
@@ -224,181 +224,195 @@ export default function ZendeskPage() {
         </p>
       </div>
 
-      <div className="grid w-full gap-3 rounded-2xl border bg-card/50 p-4 shadow-sm">
-        <div className="grid gap-2">
-          <Label>조회 기준</Label>
-          <div className="flex gap-3 text-sm">
-            <label className="flex items-center gap-2">
-              <input type="radio" name="mode" value="org" checked={mode === "org"} onChange={() => setMode("org")} />
-              조직 기준
-            </label>
-            <label className="flex items-center gap-2">
-              <input
-                type="radio"
-                name="mode"
-                value="requester"
-                checked={mode === "requester"}
-                onChange={() => setMode("requester")}
+      <div className="grid gap-6 lg:grid-cols-[360px_minmax(0,1fr)] lg:items-start">
+        <div className="flex flex-col gap-4">
+          <div className="grid w-full gap-3 rounded-2xl border bg-card/50 p-4 shadow-sm">
+            <div className="grid gap-2">
+              <Label>조회 기준</Label>
+              <div className="flex gap-3 text-sm">
+                <label className="flex items-center gap-2">
+                  <input type="radio" name="mode" value="org" checked={mode === "org"} onChange={() => setMode("org")} />
+                  조직 기준
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="mode"
+                    value="requester"
+                    checked={mode === "requester"}
+                    onChange={() => setMode("requester")}
+                  />
+                  요청자 기준
+                </label>
+              </div>
+            </div>
+
+            {mode === "org" ? (
+              <div className="grid gap-2">
+                <Label htmlFor="org">조직명 (부분 매치는 * 사용)</Label>
+                <Input
+                  id="org"
+                  placeholder="예: MyOrg 또는 MyOrg*"
+                  value={org}
+                  onChange={(e) => setOrg(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">미입력 시 조직 필터 없이 조회합니다.</p>
+              </div>
+            ) : (
+              <div className="grid gap-2">
+                <Label htmlFor="requester">요청자 (이메일 또는 이름)</Label>
+                <Input
+                  id="requester"
+                  placeholder="예: user@example.com 또는 홍길동"
+                  value={requester}
+                  onChange={(e) => setRequester(e.target.value)}
+                />
+                <p className="text-xs text-muted-foreground">미입력 시 요청자 필터 없이 조회합니다.</p>
+              </div>
+            )}
+          </div>
+
+          <div className="grid gap-2 rounded-2xl border bg-card/50 p-4 shadow-sm">
+            <Label htmlFor="status">상태 필터</Label>
+            <select
+              id="status"
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              {STATUS_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">필요하면 검색 후 상태를 추가로 수정해 사용하세요.</p>
+          </div>
+
+          <div className="grid gap-2 rounded-2xl border bg-card/50 p-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2">
+              <Label htmlFor="support-from" className="text-sm">
+                기술지원 이력 기간 (생성일 기준)
+              </Label>
+              <span className="text-[11px] text-muted-foreground">기술지원 이력 엑셀에만 적용</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                id="support-from"
+                className="h-9 w-[160px]"
+                type="date"
+                value={supportFrom}
+                onChange={(e) => setSupportFrom(e.target.value)}
               />
-              요청자 기준
-            </label>
+              <span className="text-xs text-muted-foreground">~</span>
+              <Input
+                id="support-to"
+                className="h-9 w-[160px]"
+                type="date"
+                value={supportTo}
+                onChange={(e) => setSupportTo(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-3">
+            <Button onClick={handleSubmit}>요약 요청</Button>
+            <Button variant="secondary" onClick={handleDownload} disabled={downloading}>
+              엑셀 다운로드
+            </Button>
+            <Button variant="secondary" onClick={handleSupportDownload} disabled={supportDownloading}>
+              기술지원 이력 엑셀
+            </Button>
+            <Button variant="outline" onClick={handlePipeline} disabled={pipelineLoading}>
+              {pipelineLoading ? "파이프라인 실행 중..." : "FAQ 후보 파이프라인 실행"}
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setOrg("");
+                setRequester("");
+                setStatus("");
+                setSupportFrom("");
+                setSupportTo("");
+                setMessage(null);
+                setItems([]);
+                setError(null);
+              }}
+            >
+              초기화
+            </Button>
+            {loading ? <span className="text-sm text-muted-foreground">불러오는 중...</span> : null}
+            {downloading ? <span className="text-sm text-muted-foreground">엑셀 생성 중...</span> : null}
+            {supportDownloading ? <span className="text-sm text-muted-foreground">기술지원 엑셀 생성 중...</span> : null}
           </div>
         </div>
 
-        {mode === "org" ? (
-          <div className="grid gap-2">
-            <Label htmlFor="org">조직명 (부분 매치는 * 사용)</Label>
-            <Input
-              id="org"
-              placeholder="예: MyOrg 또는 MyOrg*"
-              value={org}
-              onChange={(e) => setOrg(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">미입력 시 조직 필터 없이 조회합니다.</p>
-          </div>
-        ) : (
-          <div className="grid gap-2">
-            <Label htmlFor="requester">요청자 (이메일 또는 이름)</Label>
-            <Input
-              id="requester"
-              placeholder="예: user@example.com 또는 홍길동"
-              value={requester}
-              onChange={(e) => setRequester(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">미입력 시 요청자 필터 없이 조회합니다.</p>
-          </div>
-        )}
-      </div>
+        <div className="space-y-4">
+          {message ? (
+            <div className="rounded-xl border border-slate-200 bg-white/90 p-4 text-sm leading-6 text-muted-foreground shadow-sm backdrop-blur">
+              {message}
+            </div>
+          ) : null}
+          {error ? (
+            <div className="rounded-xl border border-destructive/60 bg-destructive/10 p-4 text-sm text-destructive shadow-sm">{error}</div>
+          ) : null}
 
-      <div className="space-y-2">
-        <Label htmlFor="status">상태 필터</Label>
-        <select
-          id="status"
-          className="h-10 rounded-md border border-input bg-background px-3 text-sm shadow-sm"
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-        >
-          {STATUS_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-muted-foreground">필요하면 검색 후 상태를 추가로 수정해 사용하세요.</p>
-      </div>
-
-      <div className="space-y-2">
-        <Label>기술지원 이력 기간 (생성일 기준)</Label>
-        <div className="flex flex-wrap items-center gap-2">
-          <Input
-            type="date"
-            value={supportFrom}
-            onChange={(e) => setSupportFrom(e.target.value)}
-          />
-          <span className="text-xs text-muted-foreground">~</span>
-          <Input
-            type="date"
-            value={supportTo}
-            onChange={(e) => setSupportTo(e.target.value)}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">기술지원 이력 엑셀에만 적용됩니다.</p>
-      </div>
-
-      <div className="flex flex-wrap gap-3">
-        <Button onClick={handleSubmit}>요약 요청</Button>
-        <Button variant="secondary" onClick={handleDownload} disabled={downloading}>
-          엑셀 다운로드
-        </Button>
-        <Button variant="secondary" onClick={handleSupportDownload} disabled={supportDownloading}>
-          기술지원 이력 엑셀
-        </Button>
-        <Button variant="outline" onClick={handlePipeline} disabled={pipelineLoading}>
-          {pipelineLoading ? "파이프라인 실행 중..." : "FAQ 후보 파이프라인 실행"}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setOrg("");
-            setRequester("");
-            setStatus("");
-            setSupportFrom("");
-            setSupportTo("");
-            setMessage(null);
-            setItems([]);
-            setError(null);
-          }}
-        >
-          초기화
-        </Button>
-        {loading ? <span className="text-sm text-muted-foreground">불러오는 중...</span> : null}
-        {downloading ? <span className="text-sm text-muted-foreground">엑셀 생성 중...</span> : null}
-        {supportDownloading ? <span className="text-sm text-muted-foreground">기술지원 엑셀 생성 중...</span> : null}
-      </div>
-
-      {message ? (
-        <div className="rounded-xl border border-slate-200 bg-white/90 p-4 text-sm leading-6 text-muted-foreground shadow-sm backdrop-blur">
-          {message}
-        </div>
-      ) : null}
-      {error ? (
-        <div className="rounded-xl border border-destructive/60 bg-destructive/10 p-4 text-sm text-destructive shadow-sm">{error}</div>
-      ) : null}
-
-      {items.length > 0 ? (
-        <ScrollArea className="h-[760px] rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-2xl">
-          <div className="grid gap-3">
-            {items.map((item) => {
-              const created =
-                new Date(String(item.created_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-";
-              const updated =
-                new Date(String(item.updated_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-";
-              return (
-                <div
-                  key={item.id}
-                  className={cn(
-                    "rounded-2xl border border-slate-200 bg-white/90 p-5 text-sm shadow-[0_18px_60px_-28px_rgba(0,0,0,0.25)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_24px_80px_-32px_rgba(0,0,0,0.30)]",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex h-6 items-center rounded-full border border-indigo-100 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 shadow-sm">
-                          #{item.id}
-                        </span>
-                        <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-                          {statusToKo(item.status)}
-                        </span>
+          {items.length > 0 ? (
+            <ScrollArea className="w-full min-h-[520px] rounded-3xl border border-slate-200 bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-2xl lg:h-[calc(100vh-220px)]">
+              <div className="grid gap-3">
+                {items.map((item) => {
+                  const created =
+                    new Date(String(item.created_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-";
+                  const updated =
+                    new Date(String(item.updated_at ?? "")).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" }) || "-";
+                  return (
+                    <div
+                      key={item.id}
+                      className={cn(
+                        "rounded-2xl border border-slate-200 bg-white/90 p-5 text-sm shadow-[0_18px_60px_-28px_rgba(0,0,0,0.25)] ring-1 ring-slate-100 transition hover:-translate-y-1 hover:shadow-[0_24px_80px_-32px_rgba(0,0,0,0.30)]",
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex h-6 items-center rounded-full border border-indigo-100 bg-indigo-50 px-3 text-xs font-semibold text-indigo-700 shadow-sm">
+                              #{item.id}
+                            </span>
+                            <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+                              {statusToKo(item.status)}
+                            </span>
+                          </div>
+                          <div className="mt-1 text-base font-semibold text-slate-900 leading-tight">
+                            {String(item.subject ?? "(제목 없음)")}
+                          </div>
+                        </div>
+                        {item.ticket_url ? (
+                          <a
+                            className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 underline-offset-4 shadow-sm hover:bg-indigo-100 hover:underline"
+                            href={String(item.ticket_url)}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            티켓 열기 ↗
+                          </a>
+                        ) : null}
                       </div>
-                      <div className="mt-1 text-base font-semibold text-slate-900 leading-tight">
-                        {String(item.subject ?? "(제목 없음)")}
+                      <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
+                        <div>요청자: {String(item.requester_name ?? "-")}</div>
+                        <div>담당자: {String(item.assignee_name ?? "-")}</div>
+                        <div>조직: {String(item.organization_name ?? "-")}</div>
+                        <div>
+                          생성: {created} / 업데이트: {updated} / 우선순위: {String(item.priority ?? "-")}
+                        </div>
                       </div>
                     </div>
-                    {item.ticket_url ? (
-                      <a
-                        className="inline-flex items-center gap-1 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700 underline-offset-4 shadow-sm hover:bg-indigo-100 hover:underline"
-                        href={String(item.ticket_url)}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        티켓 열기 ↗
-                      </a>
-                    ) : null}
-                  </div>
-                  <div className="mt-3 grid gap-1 text-xs text-muted-foreground">
-                    <div>요청자: {String(item.requester_name ?? "-")}</div>
-                    <div>담당자: {String(item.assignee_name ?? "-")}</div>
-                    <div>조직: {String(item.organization_name ?? "-")}</div>
-                    <div>
-                      생성: {created} / 업데이트: {updated} / 우선순위: {String(item.priority ?? "-")}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </ScrollArea>
-      ) : null}
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
