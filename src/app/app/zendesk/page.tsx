@@ -14,6 +14,16 @@ type StatusOption = {
   label: string;
 };
 
+const getFilenameFromDisposition = (value: string | null) => {
+  if (!value) return "";
+  const starMatch = value.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  if (starMatch?.[1]) {
+    return decodeURIComponent(starMatch[1].trim().replace(/^"+|"+$/g, ""));
+  }
+  const match = value.match(/filename\s*=\s*("?)([^";]+)\1/i);
+  return match?.[2] ?? "";
+};
+
 const STATUS_OPTIONS: StatusOption[] = [
   { value: "", label: "전체" },
   // 커스텀 상태 (custom_status_id)
@@ -165,8 +175,11 @@ export default function ZendeskPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       const today = new Date().toISOString().slice(0, 10);
+      const label = (mode === "org" ? org : requester).trim() || "all";
+      const safeLabel = label.replace(/[^a-zA-Z0-9가-힣_-]+/g, "_") || "all";
+      const headerName = getFilenameFromDisposition(res.headers.get("Content-Disposition"));
       a.href = url;
-      a.download = `support_history_${today}.xlsx`;
+      a.download = headerName || `zendesk_${safeLabel}_${today}_기술지원_이력.xlsx`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
