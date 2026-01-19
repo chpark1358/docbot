@@ -192,11 +192,12 @@ export async function POST(request: Request) {
       const assignee = aid ? usersMap.get(aid) : undefined;
       // 문의 내용에서 [고객사명] 제거
       const orgName = oid ? orgMap.get(oid) ?? oid : "";
-      let subject = r.subject ?? "";
-      if (orgName && typeof subject === "string") {
+      let subject = typeof r.subject === "string" ? r.subject : "";
+      if (orgName) {
         const re = new RegExp(`\\[\\s*${orgName}\\s*\\]`, "gi");
         subject = subject.replace(re, "").trim();
       }
+      subject = subject.replace(/\[\s*지란지교소프트\s*\]/gi, "").trim();
 
       return {
         created_at: r.created_at,

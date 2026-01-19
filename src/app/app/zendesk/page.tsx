@@ -168,7 +168,7 @@ export default function ZendeskPage() {
     } finally {
       setSupportDownloading(false);
     }
-  }, [status, supportDownloading]);
+  }, [mode, org, requester, status, supportDownloading]);
 
   const handlePipeline = useCallback(async () => {
     if (pipelineLoading) return;
@@ -284,7 +284,7 @@ export default function ZendeskPage() {
           onClick={() => {
             setOrg("");
             setRequester("");
-            setStatus("status<closed");
+            setStatus("");
             setMessage(null);
             setItems([]);
             setError(null);

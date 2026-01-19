@@ -11,6 +11,14 @@ type SearchBody = {
   label?: string;
 };
 
+const chunk = <T,>(items: T[], size: number) => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+};
+
 const buildQuery = ({ mode, org, requester, status }: Required<SearchBody>): string => {
   const parts: string[] = ["type:ticket"];
   if (status) parts.push(status);
@@ -68,7 +76,6 @@ export async function POST(request: Request) {
 
   const query = buildQuery({ mode, org, requester, status, label });
   const auth = Buffer.from(`${email}/token:${token}`).toString("base64");
-  const url = `https://${subdomain}.zendesk.com/api/v2/search.json?query=${encodeURIComponent(query)}&per_page=200`;
 
   const fetchJson = async (endpoint: string) => {
     const r = await fetch(`https://${subdomain}.zendesk.com${endpoint}`, {
@@ -83,22 +90,29 @@ export async function POST(request: Request) {
   };
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Basic ${auth}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-    });
+    let searchUrl = `https://${subdomain}.zendesk.com/api/v2/search.json?query=${encodeURIComponent(query)}&per_page=100`;
+    const results: Array<Record<string, unknown>> = [];
 
-    if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json({ error: `Zendesk 오류: ${res.status} ${res.statusText}`, detail: text.slice(0, 500) }, { status: res.status });
+    for (let i = 0; i < 50 && searchUrl; i += 1) {
+      const res = await fetch(searchUrl, {
+        headers: {
+          Authorization: `Basic ${auth}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        return NextResponse.json({ error: `Zendesk 오류: ${res.status} ${res.statusText}`, detail: text.slice(0, 500) }, { status: res.status });
+      }
+
+      const data = (await res.json()) as { results?: Array<Record<string, unknown>>; next_page?: string | null };
+      if (Array.isArray(data.results)) results.push(...data.results);
+      searchUrl = data.next_page ?? "";
     }
 
-    const data = (await res.json()) as { results?: Array<Record<string, unknown>> };
-    const items =
-      data.results?.map((r) => ({
+    const items = results.map((r) => ({
         id: r.id,
         subject: r.subject,
         status: r.status,
@@ -109,7 +123,7 @@ export async function POST(request: Request) {
         requester_id: r.requester_id,
         organization_id: r.organization_id,
         ticket_url: r.id ? `https://${subdomain}.zendesk.com/agent/tickets/${r.id}` : undefined,
-      })) ?? [];
+      }));
 
     const requesterIds = Array.from(new Set(items.map((i) => i.requester_id).filter(Boolean))) as (string | number)[];
     const assigneeIds = Array.from(new Set(items.map((i) => i.assignee_id).filter(Boolean))) as (string | number)[];
@@ -118,11 +132,15 @@ export async function POST(request: Request) {
     const [usersMap, orgMap] = await Promise.all([
       (async () => {
         if (requesterIds.length === 0 && assigneeIds.length === 0) return new Map<string | number, string>();
-        const ids = Array.from(new Set([...requesterIds, ...assigneeIds])).join(",");
+        const ids = Array.from(new Set([...requesterIds, ...assigneeIds]));
         try {
-          const resUsers = (await fetchJson(`/api/v2/users/show_many.json?ids=${ids}`)) as { users?: Array<{ id: number; name?: string; email?: string }> };
           const map = new Map<string | number, string>();
-          resUsers.users?.forEach((u) => map.set(u.id, u.name || u.email || String(u.id)));
+          for (const batch of chunk(ids, 100)) {
+            const resUsers = (await fetchJson(`/api/v2/users/show_many.json?ids=${batch.join(",")}`)) as {
+              users?: Array<{ id: number; name?: string; email?: string }>;
+            };
+            resUsers.users?.forEach((u) => map.set(u.id, u.name || u.email || String(u.id)));
+          }
           return map;
         } catch {
           return new Map<string | number, string>();
@@ -130,11 +148,15 @@ export async function POST(request: Request) {
       })(),
       (async () => {
         if (orgIds.length === 0) return new Map<string | number, string>();
-        const ids = orgIds.join(",");
+        const ids = orgIds;
         try {
-          const resOrg = (await fetchJson(`/api/v2/organizations/show_many.json?ids=${ids}`)) as { organizations?: Array<{ id: number; name?: string }> };
           const map = new Map<string | number, string>();
-          resOrg.organizations?.forEach((o) => map.set(o.id, o.name || String(o.id)));
+          for (const batch of chunk(ids, 100)) {
+            const resOrg = (await fetchJson(`/api/v2/organizations/show_many.json?ids=${batch.join(",")}`)) as {
+              organizations?: Array<{ id: number; name?: string }>;
+            };
+            resOrg.organizations?.forEach((o) => map.set(o.id, o.name || String(o.id)));
+          }
           return map;
         } catch {
           return new Map<string | number, string>();
