@@ -12,6 +12,13 @@ type SupportBody = {
   product_field_id?: number; // 커스텀 필드 ID (문의제품)
   handler_field_id?: number; // 커스텀 필드 ID (티켓처리자)
   label?: string; // 파일명에 쓸 라벨
+  from?: string; // YYYY-MM-DD
+  to?: string; // YYYY-MM-DD
+};
+
+const normalizeDate = (value: unknown) => {
+  const s = String(value ?? "").trim();
+  return /^\d{4}-\d{2}-\d{2}$/.test(s) ? s : "";
 };
 
 const statusLabel = (s: unknown) => {
@@ -77,11 +84,17 @@ export async function POST(request: Request) {
   const handlerFieldId = body.handler_field_id ?? (handlerFieldEnv ? Number(handlerFieldEnv) : undefined);
 
   const baseQuery = buildQuery({ mode, org, requester, status });
-  let query = baseQuery;
-  if (months && months > 0) {
-    const from = new Date();
-    from.setMonth(from.getMonth() - months);
-    query = `${baseQuery} updated>=${from.toISOString().slice(0, 10)}`;
+  const from = normalizeDate(body.from);
+  const to = normalizeDate(body.to);
+  const dateParts = [baseQuery];
+  if (from) dateParts.push(`created>=${from}`);
+  if (to) dateParts.push(`created<=${to}`);
+
+  let query = dateParts.join(" ");
+  if (!from && !to && months && months > 0) {
+    const fromDate = new Date();
+    fromDate.setMonth(fromDate.getMonth() - months);
+    query = `${baseQuery} updated>=${fromDate.toISOString().slice(0, 10)}`;
   }
 
   const auth = Buffer.from(`${email}/token:${token}`).toString("base64");

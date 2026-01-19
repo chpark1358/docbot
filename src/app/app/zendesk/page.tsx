@@ -31,6 +31,8 @@ export default function ZendeskPage() {
   const [org, setOrg] = useState("");
   const [requester, setRequester] = useState("");
   const [status, setStatus] = useState("");
+  const [supportFrom, setSupportFrom] = useState("");
+  const [supportTo, setSupportTo] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -139,6 +141,8 @@ export default function ZendeskPage() {
     setSupportDownloading(true);
     setError(null);
     try {
+      const from = supportFrom.trim();
+      const to = supportTo.trim();
       const res = await fetch("/api/zendesk/export-support", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,6 +152,8 @@ export default function ZendeskPage() {
           requester,
           status,
           label: mode === "org" ? org : requester,
+          from,
+          to,
           // months를 보내지 않음: 검색 화면과 동일하게 전체 기간 대상
         }),
       });
@@ -168,7 +174,7 @@ export default function ZendeskPage() {
     } finally {
       setSupportDownloading(false);
     }
-  }, [mode, org, requester, status, supportDownloading]);
+  }, [mode, org, requester, status, supportDownloading, supportFrom, supportTo]);
 
   const handlePipeline = useCallback(async () => {
     if (pipelineLoading) return;
@@ -268,6 +274,24 @@ export default function ZendeskPage() {
         <p className="text-xs text-muted-foreground">필요하면 검색 후 상태를 추가로 수정해 사용하세요.</p>
       </div>
 
+      <div className="space-y-2">
+        <Label>기술지원 이력 기간 (생성일 기준)</Label>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            type="date"
+            value={supportFrom}
+            onChange={(e) => setSupportFrom(e.target.value)}
+          />
+          <span className="text-xs text-muted-foreground">~</span>
+          <Input
+            type="date"
+            value={supportTo}
+            onChange={(e) => setSupportTo(e.target.value)}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground">기술지원 이력 엑셀에만 적용됩니다.</p>
+      </div>
+
       <div className="flex flex-wrap gap-3">
         <Button onClick={handleSubmit}>요약 요청</Button>
         <Button variant="secondary" onClick={handleDownload} disabled={downloading}>
@@ -285,6 +309,8 @@ export default function ZendeskPage() {
             setOrg("");
             setRequester("");
             setStatus("");
+            setSupportFrom("");
+            setSupportTo("");
             setMessage(null);
             setItems([]);
             setError(null);
