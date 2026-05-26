@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUp, Loader2, Paperclip, Sparkles } from "lucide-react";
+import { ArrowUp, FileText, Loader2, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { ChatAttachButton, type ChatAttachment } from "./chat-attach-button";
 
 type Props = {
   readyCount: number;
@@ -15,6 +16,7 @@ export function NewChatComposer({ readyCount }: Props) {
   const [question, setQuestion] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
 
   const send = async () => {
     if (isLoading) return;
@@ -45,11 +47,15 @@ export function NewChatComposer({ readyCount }: Props) {
 
       try {
         sessionStorage.setItem(`pending_question:${threadId}`, trimmed);
+        if (attachments.length > 0) {
+          sessionStorage.setItem(`pending_attachments:${threadId}`, JSON.stringify(attachments));
+        }
       } catch {
         // ignore
       }
 
       setQuestion("");
+      setAttachments([]);
       router.push(`/app/chats/${threadId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
@@ -75,6 +81,29 @@ export function NewChatComposer({ readyCount }: Props) {
           </div>
 
           <div className="rounded-2xl border bg-background/60 px-4 py-3 shadow-inner">
+            {attachments.length > 0 ? (
+              <div className="mb-2 flex flex-wrap gap-1.5">
+                {attachments.map((att) => (
+                  <div
+                    key={att.documentId}
+                    className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs text-foreground"
+                  >
+                    <FileText className="h-3 w-3 text-muted-foreground" />
+                    <span className="max-w-[200px] truncate">{att.fileName}</span>
+                    <button
+                      type="button"
+                      className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                      onClick={() =>
+                        setAttachments((prev) => prev.filter((a) => a.documentId !== att.documentId))
+                      }
+                      aria-label={`${att.fileName} 첨부 해제`}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <Textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
@@ -92,9 +121,16 @@ export function NewChatComposer({ readyCount }: Props) {
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Button type="button" size="icon" variant="ghost" disabled title="추후 지원 예정">
-                <Paperclip className="h-4 w-4" />
-              </Button>
+              <ChatAttachButton
+                disabled={isLoading}
+                onAttached={(att) =>
+                  setAttachments((prev) => {
+                    if (prev.some((a) => a.documentId === att.documentId)) return prev;
+                    return [...prev, att];
+                  })
+                }
+                onError={(msg) => setError(msg)}
+              />
             </div>
 
             <Button

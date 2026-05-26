@@ -1,11 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, Check, Copy, FileText, Globe, Link2, Loader2, Paperclip, RefreshCw, Search, Square } from "lucide-react";
+import { ArrowUp, Check, Copy, FileText, Globe, Link2, Loader2, RefreshCw, Search, Square, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Markdown } from "@/components/markdown";
 import { cn } from "@/lib/utils";
+import { ChatAttachButton, type ChatAttachment } from "../../_components/chat-attach-button";
 
 type Source = {
   order: number;
@@ -48,6 +49,8 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const abortRef = useRef<AbortController | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [attachments, setAttachments] = useState<ChatAttachment[]>([]);
+  const [attachError, setAttachError] = useState<string | null>(null);
 
   const copyMessage = useCallback(async (id: string, text: string) => {
     try {
@@ -259,6 +262,20 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   }, [isLoading, messages, sendMessage]);
 
   useEffect(() => {
+    try {
+      const attKey = `pending_attachments:${threadId}`;
+      const rawAtt = sessionStorage.getItem(attKey);
+      if (rawAtt) {
+        sessionStorage.removeItem(attKey);
+        const parsed = JSON.parse(rawAtt) as ChatAttachment[];
+        if (Array.isArray(parsed) && parsed.length) {
+          setAttachments(parsed);
+        }
+      }
+    } catch {
+      // ignore
+    }
+
     try {
       const key = `pending_question:${threadId}`;
       const pending = sessionStorage.getItem(key);
@@ -487,6 +504,29 @@ export function ChatClient({ threadId, initialMessages }: Props) {
           <div className="relative">
             <div className="absolute -inset-1 rounded-3xl bg-gradient-to-br from-emerald-500/15 via-cyan-400/10 to-amber-400/15 blur-2xl" />
             <div className="relative rounded-3xl border bg-background/95 p-3 shadow-[0_18px_60px_-24px_rgba(0,0,0,0.35)]">
+              {attachments.length > 0 ? (
+                <div className="mb-2 flex flex-wrap gap-1.5">
+                  {attachments.map((att) => (
+                    <div
+                      key={att.documentId}
+                      className="inline-flex items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 text-xs text-foreground"
+                    >
+                      <FileText className="h-3 w-3 text-muted-foreground" />
+                      <span className="max-w-[180px] truncate">{att.fileName}</span>
+                      <button
+                        type="button"
+                        className="rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                        onClick={() =>
+                          setAttachments((prev) => prev.filter((a) => a.documentId !== att.documentId))
+                        }
+                        aria-label={`${att.fileName} 첨부 해제`}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
@@ -503,9 +543,17 @@ export function ChatClient({ threadId, initialMessages }: Props) {
 
               <div className="mt-3 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Button type="button" size="icon" variant="ghost" disabled title="추후 지원 예정">
-                    <Paperclip className="h-4 w-4" />
-                  </Button>
+                  <ChatAttachButton
+                    disabled={isLoading}
+                    onAttached={(att) => {
+                      setAttachError(null);
+                      setAttachments((prev) => {
+                        if (prev.some((a) => a.documentId === att.documentId)) return prev;
+                        return [...prev, att];
+                      });
+                    }}
+                    onError={(msg) => setAttachError(msg)}
+                  />
                 </div>
 
                 {isLoading ? (
@@ -535,6 +583,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               </div>
 
               {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}
+              {attachError ? <p className="mt-2 text-xs text-destructive">{attachError}</p> : null}
             </div>
           </div>
         </div>
