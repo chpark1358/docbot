@@ -75,21 +75,48 @@ export function ChatClient({ threadId, initialMessages }: Props) {
     abortRef.current?.abort();
   }, []);
 
-  const scrollToLastUserMessage = useCallback(() => {
+  const isNearBottomRef = useRef(true);
+
+  const handleScroll = useCallback(() => {
+    const container = messagesRef.current;
+    if (!container) return;
+    const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    // 100px 안쪽이면 "사용자가 답변 끝을 따라보는 중" 으로 간주
+    isNearBottomRef.current = distanceFromBottom < 100;
+  }, []);
+
+  const scrollToLastUserMessage = useCallback((behavior: ScrollBehavior = "smooth") => {
     const id = lastUserIdRef.current;
     if (!id) return;
     const container = messagesRef.current;
     const el = document.getElementById(`msg-${id}`);
     if (container && el) {
       const top = el.offsetTop - container.offsetTop - 16;
-      container.scrollTo({ top, behavior: "smooth" });
+      container.scrollTo({ top, behavior });
     }
   }, []);
 
+  const scrollToBottomIfPinned = useCallback(() => {
+    if (!isNearBottomRef.current) return;
+    const container = messagesRef.current;
+    if (!container) return;
+    container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+  }, []);
+
+  // 메시지가 새로 추가될 때만 사용자 메시지 위치로 점프 (강제 스크롤은 1회)
   useEffect(() => {
     const timer = setTimeout(() => scrollToLastUserMessage(), 0);
     return () => clearTimeout(timer);
   }, [messages.length, scrollToLastUserMessage]);
+
+  // 스트리밍 중 마지막 assistant content 변화에 따라 끝으로 따라가기 (사용자가 위로 안 올렸을 때만)
+  const lastAssistantContent = messages[messages.length - 1]?.role === "assistant"
+    ? messages[messages.length - 1].content
+    : "";
+  useEffect(() => {
+    if (!isLoading) return;
+    scrollToBottomIfPinned();
+  }, [lastAssistantContent, isLoading, scrollToBottomIfPinned]);
 
   const sendMessage = useCallback(
     async (override?: string) => {
@@ -250,11 +277,12 @@ export function ChatClient({ threadId, initialMessages }: Props) {
           <div className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
             <div
               ref={messagesRef}
+              onScroll={handleScroll}
               className="flex-1 overflow-auto pr-1"
               style={{
                 scrollBehavior: "smooth",
                 paddingBottom: "180px",
-                maxHeight: "calc(100vh - 220px)",
+                maxHeight: "calc(100dvh - 220px)",
               }}
             >
               {messages.length === 0 ? (
@@ -301,8 +329,9 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                         {m.role === "assistant" && m.content ? (
                           <div
                             className={cn(
-                              "flex items-center gap-1 px-1 text-xs text-muted-foreground",
-                              "opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100",
+                              "flex items-center gap-1 px-1 text-xs text-muted-foreground transition-opacity",
+                              // 모바일: 항상 표시. 데스크탑: hover/focus 시에만
+                              "opacity-100 lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-within:opacity-100",
                             )}
                           >
                             <button
@@ -331,6 +360,37 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                                 <RefreshCw className="h-3.5 w-3.5" /> 재생성
                               </button>
                             ) : null}
+                          </div>
+                        ) : null}
+                        {/* 모바일에서만 보이는 출처 인라인 칩 (데스크탑은 사이드 패널 사용) */}
+                        {m.role === "assistant" && m.sources && m.sources.length > 0 ? (
+                          <div className="flex flex-wrap gap-1.5 px-1 lg:hidden">
+                            {m.sources.slice(0, 5).map((src) => (
+                              <a
+                                key={`${m.id}-src-${src.order}-${src.id ?? src.url ?? ""}`}
+                                href={src.url ?? "#"}
+                                target={src.url ? "_blank" : undefined}
+                                rel={src.url ? "noreferrer noopener" : undefined}
+                                onClick={(e) => {
+                                  if (!src.url) e.preventDefault();
+                                }}
+                                className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-muted"
+                              >
+                                {src.url ? <Globe className="h-3 w-3" /> : <FileText className="h-3 w-3" />}
+                                <span className="max-w-[140px] truncate">
+                                  {src.doc_title ||
+                                    (src.url
+                                      ? (() => {
+                                          try {
+                                            return new URL(src.url).hostname;
+                                          } catch {
+                                            return "출처";
+                                          }
+                                        })()
+                                      : "출처")}
+                                </span>
+                              </a>
+                            ))}
                           </div>
                         ) : null}
                       </div>
