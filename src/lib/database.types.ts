@@ -170,6 +170,21 @@ export interface Database {
           similarity: number;
         }[];
       };
+      match_chunks_all_user: {
+        Args: {
+          query_embedding: number[];
+          match_count?: number;
+          similarity_threshold?: number;
+        };
+        Returns: {
+          id: string;
+          document_id: string;
+          doc_title: string;
+          content: string;
+          metadata: Json;
+          similarity: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

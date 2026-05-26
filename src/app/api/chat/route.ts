@@ -2,13 +2,11 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { buildPrompt } from "@/lib/prompt";
 import {
-  ALL_DOCS_MIME_TYPE,
   CHAT_MODEL,
   EMBEDDING_MODEL,
-  VIRTUAL_CHAT_MIME_TYPE,
   WEB_SEARCH_CONTEXT_SIZE,
 } from "@/lib/constants";
-import { ensureAllDocsVirtualDocumentId } from "@/lib/virtual-chat";
+import { ensureAllDocsVirtualDocumentId, isVirtualDocumentMime } from "@/lib/virtual-chat";
 import { getOpenAI } from "@/lib/openai";
 import type { ChatSource } from "@/lib/database.types";
 
@@ -130,17 +128,13 @@ const searchDocuments = async (
     return (data ?? []) as ChunkMatch[];
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data } = await (supabase as any).rpc("match_chunks_all_user", {
+  const { data } = await supabase.rpc("match_chunks_all_user", {
     query_embedding: queryEmbedding,
     match_count: RAG_TOP_K,
     similarity_threshold: 0.2,
   });
   return (data ?? []) as ChunkMatch[];
 };
-
-const isVirtualMime = (mime: string | null | undefined) =>
-  mime === VIRTUAL_CHAT_MIME_TYPE || mime === ALL_DOCS_MIME_TYPE;
 
 export async function POST(req: Request) {
   if (!process.env.OPENAI_API_KEY) {
@@ -199,7 +193,7 @@ export async function POST(req: Request) {
       .eq("id", targetDocumentId)
       .or(`user_id.eq.${user.id},is_shared.eq.true`)
       .single();
-    if (doc && !isVirtualMime(doc.mime_type)) {
+    if (doc && !isVirtualDocumentMime(doc.mime_type)) {
       if (doc.status !== "ready") {
         return NextResponse.json({ error: "문서 처리 중입니다. 잠시 후 다시 시도해주세요." }, { status: 400 });
       }

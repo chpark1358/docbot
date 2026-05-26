@@ -4,41 +4,15 @@ import { ALL_DOCS_MIME_TYPE, VIRTUAL_CHAT_MIME_TYPE } from "@/lib/constants";
 
 type Supabase = SupabaseClient<Database>;
 
-export const ensureVirtualChatDocumentId = async (supabase: Supabase, userId: string): Promise<string> => {
-  const { data: existing } = await supabase
-    .from("documents")
-    .select("id")
-    .eq("user_id", userId)
-    .eq("mime_type", VIRTUAL_CHAT_MIME_TYPE)
-    .limit(1)
-    .maybeSingle();
-
-  if (existing?.id) return existing.id;
-
-  const { data: inserted, error } = await supabase
-    .from("documents")
-    .insert({
-      user_id: userId,
-      title: "웹 검색 대화",
-      storage_path: `${userId}/__virtual__/web-chat`,
-      mime_type: VIRTUAL_CHAT_MIME_TYPE,
-      size: 0,
-      status: "ready",
-      error_message: null,
-    })
-    .select("id")
-    .single();
-
-  if (error || !inserted?.id) {
-    throw new Error(error?.message ?? "웹 채팅용 문서를 생성할 수 없습니다.");
-  }
-
-  return inserted.id;
-};
-
-export const isVirtualChatDocument = (mimeType: string | null | undefined) => mimeType === VIRTUAL_CHAT_MIME_TYPE;
-
-export const ensureAllDocsVirtualDocumentId = async (supabase: Supabase, userId: string): Promise<string> => {
+/**
+ * 모든 채팅 스레드는 chat_threads.document_id NOT NULL 제약 때문에 어떤 문서든
+ * 가리켜야 한다. 사용자가 실제 문서를 고르지 않고 시작하는 일반 채팅을 위해
+ * 사용자당 하나의 "workspace 가상 문서" 를 만들어 그 id 를 anchor 로 사용한다.
+ */
+export const ensureAllDocsVirtualDocumentId = async (
+  supabase: Supabase,
+  userId: string,
+): Promise<string> => {
   const { data: existing } = await supabase
     .from("documents")
     .select("id")
@@ -70,4 +44,9 @@ export const ensureAllDocsVirtualDocumentId = async (supabase: Supabase, userId:
   return inserted.id;
 };
 
-export const isAllDocsVirtualDocument = (mimeType: string | null | undefined) => mimeType === ALL_DOCS_MIME_TYPE;
+/**
+ * mime_type 이 가상 문서(workspace 또는 legacy 웹 채팅)인지 판정.
+ * RAG 검색 시 가상 문서는 제외해야 한다.
+ */
+export const isVirtualDocumentMime = (mime: string | null | undefined): boolean =>
+  mime === ALL_DOCS_MIME_TYPE || mime === VIRTUAL_CHAT_MIME_TYPE;
