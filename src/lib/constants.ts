@@ -17,8 +17,8 @@ export const CHUNK_OVERLAP = 150;
 export const EMBEDDING_MODEL = "text-embedding-3-small";
 
 // Chat
-export const CHAT_MODEL = "gpt-4o-mini";
-export const WEB_SEARCH_CONTEXT_SIZE: "low" | "medium" | "high" = "low";
+export const CHAT_MODEL = "gpt-5.4-mini";
+export const WEB_SEARCH_CONTEXT_SIZE: "low" | "medium" | "high" = "medium";
 
 // 문서 없이도 대화(웹 검색/일반 챗)할 수 있도록, 내부적으로 사용하는 가상 문서 MIME 타입
 export const VIRTUAL_CHAT_MIME_TYPE = "application/x-virtual-chat";
