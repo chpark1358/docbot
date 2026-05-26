@@ -15,6 +15,7 @@ type Source = {
   snippet?: string;
   url?: string;
   doc_title?: string;
+  section_path?: string[];
 };
 
 type Message = {
@@ -393,6 +394,11 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                             })()
                           : "출처")}
                     </div>
+                    {src.section_path && src.section_path.length > 0 ? (
+                      <div className="mt-0.5 truncate text-[11px] text-muted-foreground">
+                        {src.section_path.join(" › ")}
+                      </div>
+                    ) : null}
                     {src.url ? (
                       <a
                         href={src.url}
