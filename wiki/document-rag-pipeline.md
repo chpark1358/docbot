@@ -37,17 +37,19 @@ title: 문서 RAG 파이프라인
 
 ## 검색 (질문 시점)
 
-- 위치: `src/app/api/chat/route.ts:583-741`
+- 위치: `src/app/api/chat/route.ts` 의 `searchDocuments()`
 - 질문 임베딩 → RPC 호출:
-  - 단일 문서: `match_chunks(query_embedding, doc_id, ...)`
-  - 전체 문서(All-Docs): `match_chunks_all_user(query_embedding, ...)`
-- 상위 6개 청크 추출
-- 최소 유사도: **0.35**, 결과 부족하면 **0.2**로 완화 재조회
-- (원본은 FAQ도 병렬 조회하지만 이 위키 범위에선 제외 — 재구성에서 잘라낼 부분)
+  - 특정 문서가 지정된 경우: `match_chunks(query_embedding, doc_id, ...)`
+  - 그 외: `match_chunks_all_user(query_embedding, ...)` — 본인 + 공유 문서 모두 대상
+- 상위 **8개** 청크 추출 (threshold 0.2)
+- 최소 유사도 컷오프: **0.35** — 그 미만 청크는 LLM context에서 제외
+- 검색 결과 0건이어도 LLM은 정상 호출되어 [[chat-engine]] 의 웹 검색 도구로 대체 가능
 
 ## 가상 문서 (`src/lib/virtual-chat.ts`)
-All-Docs 모드와 Web 모드에서 "현재 대화의 문서"를 가상으로 만들어
-스레드/메시지 모델을 동일하게 재사용하기 위한 어댑터.
+모든 채팅 스레드는 **workspace 가상 문서** (`ALL_DOCS_MIME_TYPE`) 에 묶인다.
+이는 `chat_threads.document_id` 가 NOT NULL이라는 스키마 제약을 만족하면서도,
+실제 문서를 고르지 않고 시작하는 일반 대화를 가능하게 하기 위한 어댑터다.
+가상 문서 자체는 RAG 검색 대상에서 자동 제외된다.
 
 ## 관련
 - [[chat-engine]] — 검색 결과를 어떻게 프롬프트에 합치는지
