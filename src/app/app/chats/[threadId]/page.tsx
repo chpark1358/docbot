@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { FileText, Globe, Library } from "lucide-react";
+import { FileText, Library, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
-import { isVirtualChatDocument } from "@/lib/virtual-chat";
+import { ALL_DOCS_MIME_TYPE, VIRTUAL_CHAT_MIME_TYPE } from "@/lib/constants";
 import { ChatClient } from "./chat-client";
 import { ChatDeleteButton } from "../../_components/chat-delete-button";
 
@@ -46,7 +46,7 @@ export default async function ChatThreadPage({ params }: Params) {
     notFound();
   }
 
-  const virtualChat = isVirtualChatDocument(document.mime_type);
+  const isWorkspace = document.mime_type === VIRTUAL_CHAT_MIME_TYPE || document.mime_type === ALL_DOCS_MIME_TYPE;
 
   const { data: messages } = await supabase
     .from("chat_messages")
@@ -61,12 +61,12 @@ export default async function ChatThreadPage({ params }: Params) {
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-2 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-xs uppercase tracking-wide text-muted-foreground">
-              {virtualChat ? <Globe className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-              {virtualChat ? "웹 검색" : "문서"}
+              {isWorkspace ? <Sparkles className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+              {isWorkspace ? "AI 챗봇" : "문서"}
             </div>
-            <div className="truncate text-lg font-semibold">{virtualChat ? thread.title : document.title}</div>
+            <div className="truncate text-lg font-semibold">{isWorkspace ? thread.title : document.title}</div>
             <div className="truncate text-xs text-muted-foreground">
-              {virtualChat ? "문서 없이 질문하고, 필요하면 웹 검색 결과를 활용해 답합니다." : thread.title}
+              {isWorkspace ? "사내 문서와 웹을 함께 활용해 답변합니다." : thread.title}
             </div>
           </div>
 
