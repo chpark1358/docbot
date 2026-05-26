@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, FileText, Globe, Link2, Loader2, Paperclip } from "lucide-react";
+import { ArrowUp, FileText, Globe, Link2, Loader2, Paperclip, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Markdown } from "@/components/markdown";
 import { cn } from "@/lib/utils";
 
 type Source = {
@@ -24,6 +25,11 @@ type Message = {
   sources?: Source[];
 };
 
+type ToolStatus = {
+  tool: string;
+  status: "running" | "completed";
+};
+
 type Props = {
   threadId: string;
   initialMessages: Message[];
@@ -34,6 +40,8 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [toolStatus, setToolStatus] = useState<ToolStatus | null>(null);
+  const [docCount, setDocCount] = useState<number | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const lastUserIdRef = useRef<string | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
@@ -44,63 +52,12 @@ export function ChatClient({ threadId, initialMessages }: Props) {
     const container = messagesRef.current;
     const el = document.getElementById(`msg-${id}`);
     if (container && el) {
-      const top = el.offsetTop - container.offsetTop - 16; // small padding
+      const top = el.offsetTop - container.offsetTop - 16;
       container.scrollTo({ top, behavior: "smooth" });
     }
   }, []);
 
-  const renderContent = (text: string) => {
-    const renderInline = (t: string) => {
-      const parts = t.split(/\*\*(.+?)\*\*/g);
-      return parts.map((part, idx) =>
-        idx % 2 === 1 ? (
-          <span key={idx} className="font-semibold text-slate-900">
-            {part}
-          </span>
-        ) : (
-          <span key={idx}>{part}</span>
-        ),
-      );
-    };
-
-    const lines = text.split(/\n+/).filter((l) => l.trim() !== "");
-    return (
-      <div className="space-y-2">
-        {lines.map((line, idx) => {
-          if (line.startsWith("## ")) {
-            return (
-              <div key={idx} className="mt-1 text-base font-semibold text-slate-900">
-                {line.slice(3)}
-              </div>
-            );
-          }
-          if (line.startsWith("### ")) {
-            return (
-              <div key={idx} className="text-sm font-semibold text-slate-800">
-                {line.slice(4)}
-              </div>
-            );
-          }
-          if (line.startsWith("* ")) {
-            return (
-              <div key={idx} className="flex items-start gap-2 text-sm text-slate-800">
-                <span className="mt-1 block h-1.5 w-1.5 rounded-full bg-slate-400" />
-                <span className="leading-6">{renderInline(line.slice(2))}</span>
-              </div>
-            );
-          }
-          return (
-            <p key={idx} className="text-sm text-slate-800 leading-6">
-              {renderInline(line)}
-            </p>
-          );
-        })}
-      </div>
-    );
-  };
-
   useEffect(() => {
-    // 새 메시지가 추가될 때마다 마지막 사용자 질문 위치로 부드럽게 스크롤
     const timer = setTimeout(() => scrollToLastUserMessage(), 0);
     return () => clearTimeout(timer);
   }, [messages.length, scrollToLastUserMessage]);
@@ -112,6 +69,8 @@ export function ChatClient({ threadId, initialMessages }: Props) {
       setInput("");
       setError(null);
       setIsLoading(true);
+      setToolStatus(null);
+      setDocCount(null);
 
       const userId = crypto.randomUUID();
       const streamingId = crypto.randomUUID();
@@ -169,10 +128,15 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                 if (payload.type === "chunk" && typeof payload.text === "string") {
                   acc += payload.text;
                   updateAssistant(acc);
+                } else if (payload.type === "context") {
+                  if (typeof payload.docCount === "number") setDocCount(payload.docCount);
+                } else if (payload.type === "tool") {
+                  setToolStatus({ tool: payload.tool, status: payload.status });
                 } else if (payload.type === "done") {
                   const sources: Source[] = Array.isArray(payload.sources) ? payload.sources : [];
-                  updateAssistant(acc || payload.answer || "문서에서 확인되지 않음", sources);
-                  setSidebarSources(sources.slice(0, 5));
+                  updateAssistant(acc || payload.answer || "답변을 생성하지 못했습니다.", sources);
+                  setSidebarSources(sources.slice(0, 6));
+                  setToolStatus(null);
                 } else if (payload.type === "error") {
                   throw new Error(payload.message || "스트리밍 오류가 발생했습니다.");
                 }
@@ -186,20 +150,20 @@ export function ChatClient({ threadId, initialMessages }: Props) {
           if (!res.ok) {
             throw new Error(data?.error || "질문 처리에 실패했습니다.");
           }
-          acc = data.answer ?? "문서에서 확인되지 않음";
+          acc = data.answer ?? "답변을 생성하지 못했습니다.";
           const sources: Source[] = data.sources ?? [];
           updateAssistant(acc, sources);
-          setSidebarSources(sources.slice(0, 5));
+          setSidebarSources(sources.slice(0, 6));
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-        // 실패 시 스트리밍 메시지 제거
         setMessages((prev) => prev.filter((m) => m.id !== streamingId));
       } finally {
         setIsLoading(false);
+        setToolStatus(null);
       }
     },
-    [input, isLoading, threadId],
+    [input, isLoading, threadId, scrollToLastUserMessage],
   );
 
   useEffect(() => {
@@ -228,33 +192,63 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                 maxHeight: "calc(100vh - 220px)",
               }}
             >
-            {messages.length === 0 ? (
-              <div className="flex flex-1 flex-col items-center justify-center gap-2 py-24 text-center">
-                <div className="text-2xl font-semibold tracking-tight">무엇이든 물어보세요</div>
-                <p className="max-w-md text-sm text-muted-foreground">
-                  답변은 문서 내용을 기반으로만 생성되며, 문서에서 확인되지 않는 정보는 추측하지 않습니다.
-                </p>
-              </div>
-            ) : (
-              messages.map((m) => (
-                <div key={m.id} id={`msg-${m.id}`} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
-                  <div
-                    className={cn(
-                      "max-w-[min(720px,100%)] rounded-2xl px-5 py-4 text-sm leading-6 shadow-sm",
-                      m.role === "user"
-                        ? "bg-gradient-to-br from-emerald-600 via-cyan-600 to-sky-600 text-white"
-                        : "border bg-card",
-                    )}
-                  >
-                    {m.role === "assistant" ? renderContent(m.content) : <p className="whitespace-pre-wrap">{m.content}</p>}
-                  </div>
+              {messages.length === 0 ? (
+                <div className="flex flex-1 flex-col items-center justify-center gap-2 py-24 text-center">
+                  <div className="text-2xl font-semibold tracking-tight">무엇이든 물어보세요</div>
+                  <p className="max-w-md text-sm text-muted-foreground">
+                    사내 문서와 웹을 함께 활용해 답변합니다. 필요한 경우 챗봇이 알아서 웹 검색을 호출합니다.
+                  </p>
                 </div>
-              ))
-            )}
+              ) : (
+                messages.map((m) => (
+                  <div
+                    key={m.id}
+                    id={`msg-${m.id}`}
+                    className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}
+                  >
+                    <div
+                      className={cn(
+                        "max-w-[min(720px,100%)] rounded-2xl px-5 py-4 text-sm leading-6 shadow-sm",
+                        m.role === "user"
+                          ? "bg-gradient-to-br from-emerald-600 via-cyan-600 to-sky-600 text-white"
+                          : "border bg-card text-foreground",
+                      )}
+                    >
+                      {m.role === "assistant" ? (
+                        m.content ? (
+                          <Markdown content={m.content} />
+                        ) : (
+                          <span className="inline-flex items-center gap-2 text-muted-foreground">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" /> 답변 준비 중...
+                          </span>
+                        )
+                      ) : (
+                        <p className="whitespace-pre-wrap">{m.content}</p>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {isLoading ? (
-              <div className="flex justify-start">
+              <div className="flex flex-col gap-2">
+                {docCount !== null ? (
+                  <div className="flex max-w-[min(720px,100%)] items-center gap-2 rounded-xl border bg-card/80 px-3 py-2 text-xs text-muted-foreground">
+                    <Search className="h-3.5 w-3.5" />
+                    사내 문서 {docCount}건 조회됨
+                  </div>
+                ) : null}
+                {toolStatus?.tool === "web_search" ? (
+                  <div className="flex max-w-[min(720px,100%)] items-center gap-2 rounded-xl border bg-card/80 px-3 py-2 text-xs text-muted-foreground">
+                    {toolStatus.status === "running" ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Globe className="h-3.5 w-3.5" />
+                    )}
+                    {toolStatus.status === "running" ? "웹 검색 중..." : "웹 검색 완료"}
+                  </div>
+                ) : null}
                 <div className="flex max-w-[min(720px,100%)] items-center gap-2 rounded-2xl border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
                   <Loader2 className="h-4 w-4 animate-spin" /> 답변 생성 중...
                 </div>
@@ -264,29 +258,45 @@ export function ChatClient({ threadId, initialMessages }: Props) {
 
           {sidebarSources.length ? (
             <aside className="sticky top-6 hidden h-fit rounded-2xl border bg-card/85 p-4 shadow-sm lg:block">
-              <div className="text-sm font-semibold text-slate-900">출처</div>
+              <div className="text-sm font-semibold text-foreground">출처</div>
               <div className="mt-3 space-y-3">
                 {sidebarSources.map((src) => (
-                  <div key={`${src.id ?? src.url ?? src.order}`} className="rounded-lg border bg-background px-3 py-2 text-sm">
+                  <div
+                    key={`${src.id ?? src.url ?? src.order}`}
+                    className="rounded-lg border bg-background px-3 py-2 text-sm"
+                  >
                     <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                      <span>#{src.order}</span>
-                      {typeof src.similarity === "number" ? <span>sim {src.similarity.toFixed(2)}</span> : null}
+                      <span className="inline-flex items-center gap-1">
+                        {src.url ? <Globe className="h-3 w-3" /> : <FileText className="h-3 w-3" />}#{src.order}
+                      </span>
+                      {typeof src.similarity === "number" ? (
+                        <span className="font-mono">sim {src.similarity.toFixed(2)}</span>
+                      ) : null}
                     </div>
-                    <div className="mt-1 text-sm font-medium text-slate-900 truncate">
-                      {src.doc_title || (src.url ? (() => { try { return new URL(src.url).hostname; } catch { return "출처"; } })() : "출처")}
+                    <div className="mt-1 truncate text-sm font-medium text-foreground">
+                      {src.doc_title ||
+                        (src.url
+                          ? (() => {
+                              try {
+                                return new URL(src.url).hostname;
+                              } catch {
+                                return "출처";
+                              }
+                            })()
+                          : "출처")}
                     </div>
                     {src.url ? (
                       <a
                         href={src.url}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700 underline-offset-4 hover:underline"
+                        className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-700 underline-offset-4 hover:underline dark:text-emerald-400"
                       >
                         <Link2 className="h-3 w-3" /> 열기
                       </a>
                     ) : null}
                     {src.snippet ? (
-                      <div className="mt-2 text-xs text-slate-700 line-clamp-3">{src.snippet}</div>
+                      <div className="mt-2 line-clamp-3 text-xs text-foreground/80">{src.snippet}</div>
                     ) : null}
                   </div>
                 ))}
@@ -306,7 +316,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="문서 내용에 대해 질문하세요. (Enter 전송 / Shift+Enter 줄바꿈)"
+                placeholder="무엇이든 물어보세요. (Enter 전송 / Shift+Enter 줄바꿈)"
                 className="min-h-[72px] resize-none border-none bg-transparent p-0 text-sm leading-6 shadow-none focus-visible:ring-0"
                 disabled={isLoading}
                 onKeyDown={(e) => {
@@ -321,12 +331,6 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Button type="button" size="icon" variant="ghost" disabled title="추후 지원 예정">
                     <Paperclip className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" size="icon" variant="ghost" disabled title="추후 지원 예정">
-                    <FileText className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" size="icon" variant="ghost" disabled title="추후 지원 예정">
-                    <Globe className="h-4 w-4" />
                   </Button>
                 </div>
 
