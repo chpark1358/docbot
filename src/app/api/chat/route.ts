@@ -131,21 +131,33 @@ const searchDocuments = async (
   const embeddingRes = await getOpenAI().embeddings.create({ model: EMBEDDING_MODEL, input: query });
   const queryEmbedding = embeddingRes.data[0].embedding;
 
-  if (scopedDocumentId) {
-    const { data } = await supabase.rpc("match_chunks", {
-      query_embedding: queryEmbedding,
-      doc_id: scopedDocumentId,
-      match_count: RAG_TOP_K,
-      similarity_threshold: 0.2,
-    });
-    return (data ?? []) as ChunkMatch[];
-  }
-
-  const { data } = await supabase.rpc("match_chunks_all_user", {
+  const { data, error } = await supabase.rpc("match_chunks_hybrid", {
+    query_text: query,
     query_embedding: queryEmbedding,
+    doc_id: scopedDocumentId,
     match_count: RAG_TOP_K,
     similarity_threshold: 0.2,
   });
+
+  if (error) {
+    // Hybrid RPC 가 아직 적용 안 된 환경에서는 vector-only 로 안전 폴백
+    if (scopedDocumentId) {
+      const fb = await supabase.rpc("match_chunks", {
+        query_embedding: queryEmbedding,
+        doc_id: scopedDocumentId,
+        match_count: RAG_TOP_K,
+        similarity_threshold: 0.2,
+      });
+      return (fb.data ?? []) as ChunkMatch[];
+    }
+    const fb = await supabase.rpc("match_chunks_all_user", {
+      query_embedding: queryEmbedding,
+      match_count: RAG_TOP_K,
+      similarity_threshold: 0.2,
+    });
+    return (fb.data ?? []) as ChunkMatch[];
+  }
+
   return (data ?? []) as ChunkMatch[];
 };
 

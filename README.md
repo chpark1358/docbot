@@ -49,10 +49,18 @@ SUPABASE_SERVICE_ROLE_KEY=...
 `supabase/schema.sql` 를 Supabase SQL Editor에 붙여 실행합니다. 다음이 생성됩니다:
 
 - 테이블: `documents`, `document_chunks`, `chat_threads`, `chat_messages`
-- 인덱스: 사용자/생성일 + IVFFlat on embedding (lists=100)
-- RPC: `match_chunks(query_embedding, doc_id, ...)`, `match_chunks_all_user(...)`
+- 인덱스:
+  - 사용자/생성일
+  - **IVFFlat on embedding** (`lists=100`) — 벡터 유사도
+  - **GIN on content_tsv** — Postgres FTS (BM25-like)
+- RPC:
+  - `match_chunks(query_embedding, doc_id, ...)` — 벡터 only (단일 문서)
+  - `match_chunks_all_user(query_embedding, ...)` — 벡터 only (사용자 전체)
+  - `match_chunks_hybrid(query_text, query_embedding, doc_id, ...)` — **벡터 + FTS, Reciprocal Rank Fusion** (기본 사용)
 - RLS: 모든 테이블 `user_id = auth.uid()` (공유 문서는 read 예외)
 - Storage 버킷: `documents` (동일 RLS)
+
+> 기존 DB가 있고 스키마만 업그레이드한다면, 위 파일의 `alter table public.document_chunks add column ... content_tsv ...` 와 `match_chunks_hybrid` 함수 정의 두 블록만 떼어 실행하면 됩니다. `content_tsv` 는 generated 컬럼이라 기존 row 도 자동으로 채워집니다.
 
 ### 4. 개발 서버
 

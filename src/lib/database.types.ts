@@ -186,6 +186,25 @@ export interface Database {
           similarity: number;
         }[];
       };
+      match_chunks_hybrid: {
+        Args: {
+          query_text: string;
+          query_embedding: number[];
+          doc_id?: string | null;
+          match_count?: number;
+          similarity_threshold?: number;
+          rrf_k?: number;
+        };
+        Returns: {
+          id: string;
+          document_id: string;
+          doc_title: string;
+          content: string;
+          metadata: Json;
+          similarity: number;
+          rrf_score: number;
+        }[];
+      };
     };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;

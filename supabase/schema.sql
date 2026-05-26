@@ -180,6 +180,111 @@ begin
 end;
 $$;
 
+-- Hybrid search: BM25 (Postgres FTS) + vector
+-- content_tsv 는 generated 컬럼이라 기존 row 도 자동으로 채워진다.
+alter table public.document_chunks
+  add column if not exists content_tsv tsvector
+  generated always as (to_tsvector('simple', coalesce(content, ''))) stored;
+
+create index if not exists document_chunks_content_tsv_idx
+  on public.document_chunks using gin (content_tsv);
+
+-- vector 결과와 FTS 결과를 Reciprocal Rank Fusion 으로 합쳐 상위 K 를 반환한다.
+-- doc_id 가 null 이면 사용자 본인 + 공유 문서 전체 대상, 지정되면 그 문서로 한정.
+create or replace function public.match_chunks_hybrid (
+  query_text text,
+  query_embedding vector(1536),
+  doc_id uuid default null,
+  match_count int default 8,
+  similarity_threshold float default 0.0,
+  rrf_k int default 60
+)
+returns table (
+  id uuid,
+  document_id uuid,
+  doc_title text,
+  content text,
+  metadata jsonb,
+  similarity float,
+  rrf_score float
+)
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  requester uuid := auth.uid();
+  fanout int := greatest(match_count * 3, 24);
+begin
+  if requester is null then
+    raise exception 'not authenticated';
+  end if;
+
+  return query
+  with vector_hits as (
+    select
+      dc.id,
+      dc.document_id,
+      d.title as doc_title,
+      dc.content,
+      dc.metadata,
+      1 - (dc.embedding <=> query_embedding) as similarity,
+      row_number() over (order by dc.embedding <=> query_embedding) as rank
+    from public.document_chunks dc
+    join public.documents d on d.id = dc.document_id
+    where
+      (doc_id is null or dc.document_id = doc_id)
+      and ((dc.user_id = requester and d.user_id = requester) or d.is_shared = true)
+      and d.status = 'ready'
+      and d.mime_type not in ('application/x-virtual-chat', 'application/x-all-docs')
+      and (1 - (dc.embedding <=> query_embedding)) >= similarity_threshold
+    order by dc.embedding <=> query_embedding
+    limit fanout
+  ),
+  fts_hits as (
+    select
+      dc.id,
+      dc.document_id,
+      d.title as doc_title,
+      dc.content,
+      dc.metadata,
+      ts_rank_cd(dc.content_tsv, plainto_tsquery('simple', query_text)) as fts_rank,
+      row_number() over (
+        order by ts_rank_cd(dc.content_tsv, plainto_tsquery('simple', query_text)) desc
+      ) as rank
+    from public.document_chunks dc
+    join public.documents d on d.id = dc.document_id
+    where
+      (doc_id is null or dc.document_id = doc_id)
+      and ((dc.user_id = requester and d.user_id = requester) or d.is_shared = true)
+      and d.status = 'ready'
+      and d.mime_type not in ('application/x-virtual-chat', 'application/x-all-docs')
+      and dc.content_tsv @@ plainto_tsquery('simple', query_text)
+    order by fts_rank desc
+    limit fanout
+  ),
+  combined as (
+    select
+      coalesce(v.id, f.id) as id,
+      coalesce(v.document_id, f.document_id) as document_id,
+      coalesce(v.doc_title, f.doc_title) as doc_title,
+      coalesce(v.content, f.content) as content,
+      coalesce(v.metadata, f.metadata) as metadata,
+      coalesce(v.similarity, 0)::float as similarity,
+      (
+        coalesce(1.0 / (rrf_k + v.rank), 0) +
+        coalesce(1.0 / (rrf_k + f.rank), 0)
+      )::float as rrf_score
+    from vector_hits v
+    full outer join fts_hits f on v.id = f.id
+  )
+  select c.id, c.document_id, c.doc_title, c.content, c.metadata, c.similarity, c.rrf_score
+  from combined c
+  order by c.rrf_score desc, c.similarity desc
+  limit match_count;
+end;
+$$;
+
 -- Storage: documents bucket 및 정책
 insert into storage.buckets (id, name, public)
 values ('documents', 'documents', false)
