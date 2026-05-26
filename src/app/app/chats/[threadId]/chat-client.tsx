@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowUp, FileText, Globe, Link2, Loader2, Paperclip, Search } from "lucide-react";
+import { ArrowUp, Check, Copy, FileText, Globe, Link2, Loader2, Paperclip, RefreshCw, Search, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Markdown } from "@/components/markdown";
@@ -44,7 +44,35 @@ export function ChatClient({ threadId, initialMessages }: Props) {
   const [docCount, setDocCount] = useState<number | null>(null);
   const messagesRef = useRef<HTMLDivElement | null>(null);
   const lastUserIdRef = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
   const [sidebarSources, setSidebarSources] = useState<Source[]>([]);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyMessage = useCallback(async (id: string, text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // fallback: 보안 컨텍스트가 아닐 때
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+      } catch {
+        // ignore
+      }
+      document.body.removeChild(ta);
+    }
+    setCopiedId(id);
+    window.setTimeout(() => setCopiedId((cur) => (cur === id ? null : cur)), 1600);
+  }, []);
+
+  const stopGenerating = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
 
   const scrollToLastUserMessage = useCallback(() => {
     const id = lastUserIdRef.current;
@@ -93,6 +121,9 @@ export function ChatClient({ threadId, initialMessages }: Props) {
         );
       };
 
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       try {
         let acc = "";
         const res = await fetch("/api/chat?stream=1", {
@@ -102,6 +133,7 @@ export function ChatClient({ threadId, initialMessages }: Props) {
             Accept: "text/event-stream",
           },
           body: JSON.stringify({ question, threadId }),
+          signal: controller.signal,
         });
 
         const contentType = res.headers.get("content-type") ?? "";
@@ -156,15 +188,47 @@ export function ChatClient({ threadId, initialMessages }: Props) {
           setSidebarSources(sources.slice(0, 6));
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
-        setMessages((prev) => prev.filter((m) => m.id !== streamingId));
+        const aborted = err instanceof Error && (err.name === "AbortError" || /aborted/i.test(err.message));
+        if (aborted) {
+          // 중단됐을 때: 지금까지 쌓인 acc가 있으면 메시지에 [중단됨] 표시, 없으면 제거
+          setMessages((prev) =>
+            prev.flatMap((m) => {
+              if (m.id !== streamingId) return [m];
+              return m.content ? [{ ...m, content: `${m.content}\n\n_답변이 중단되었습니다._` }] : [];
+            }),
+          );
+        } else {
+          setError(err instanceof Error ? err.message : "오류가 발생했습니다.");
+          setMessages((prev) => prev.filter((m) => m.id !== streamingId));
+        }
       } finally {
+        abortRef.current = null;
         setIsLoading(false);
         setToolStatus(null);
       }
     },
     [input, isLoading, threadId, scrollToLastUserMessage],
   );
+
+  const regenerate = useCallback(() => {
+    if (isLoading) return;
+    // 마지막 user 메시지 찾기
+    let lastUserMessage: Message | null = null;
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].role === "user") {
+        lastUserMessage = messages[i];
+        break;
+      }
+    }
+    if (!lastUserMessage) return;
+    // 가장 마지막 assistant 메시지 제거 후 재호출
+    setMessages((prev) => {
+      const last = prev[prev.length - 1];
+      if (last?.role === "assistant") return prev.slice(0, -1);
+      return prev;
+    });
+    void sendMessage(lastUserMessage.content);
+  }, [isLoading, messages, sendMessage]);
 
   useEffect(() => {
     try {
@@ -200,34 +264,78 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                   </p>
                 </div>
               ) : (
-                messages.map((m) => (
-                  <div
-                    key={m.id}
-                    id={`msg-${m.id}`}
-                    className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}
-                  >
+                messages.map((m, idx) => {
+                  const isLastAssistant =
+                    m.role === "assistant" && idx === messages.length - 1 && Boolean(m.content);
+                  return (
                     <div
+                      key={m.id}
+                      id={`msg-${m.id}`}
                       className={cn(
-                        "max-w-[min(720px,100%)] rounded-2xl px-5 py-4 text-sm leading-6 shadow-sm",
-                        m.role === "user"
-                          ? "bg-gradient-to-br from-emerald-600 via-cyan-600 to-sky-600 text-white"
-                          : "border bg-card text-foreground",
+                        "group/msg flex",
+                        m.role === "user" ? "justify-end" : "justify-start",
                       )}
                     >
-                      {m.role === "assistant" ? (
-                        m.content ? (
-                          <Markdown content={m.content} />
-                        ) : (
-                          <span className="inline-flex items-center gap-2 text-muted-foreground">
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" /> 답변 준비 중...
-                          </span>
-                        )
-                      ) : (
-                        <p className="whitespace-pre-wrap">{m.content}</p>
-                      )}
+                      <div className="flex max-w-[min(720px,100%)] flex-col gap-1">
+                        <div
+                          className={cn(
+                            "rounded-2xl px-5 py-4 text-sm leading-6 shadow-sm",
+                            m.role === "user"
+                              ? "bg-gradient-to-br from-emerald-600 via-cyan-600 to-sky-600 text-white"
+                              : "border bg-card text-foreground",
+                          )}
+                        >
+                          {m.role === "assistant" ? (
+                            m.content ? (
+                              <Markdown content={m.content} />
+                            ) : (
+                              <span className="inline-flex items-center gap-2 text-muted-foreground">
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" /> 답변 준비 중...
+                              </span>
+                            )
+                          ) : (
+                            <p className="whitespace-pre-wrap">{m.content}</p>
+                          )}
+                        </div>
+                        {m.role === "assistant" && m.content ? (
+                          <div
+                            className={cn(
+                              "flex items-center gap-1 px-1 text-xs text-muted-foreground",
+                              "opacity-0 transition-opacity group-hover/msg:opacity-100 focus-within:opacity-100",
+                            )}
+                          >
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-muted"
+                              onClick={() => void copyMessage(m.id, m.content)}
+                              aria-label="답변 복사"
+                            >
+                              {copiedId === m.id ? (
+                                <>
+                                  <Check className="h-3.5 w-3.5" /> 복사됨
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="h-3.5 w-3.5" /> 복사
+                                </>
+                              )}
+                            </button>
+                            {isLastAssistant && !isLoading ? (
+                              <button
+                                type="button"
+                                className="inline-flex items-center gap-1 rounded-md px-2 py-1 hover:bg-muted"
+                                onClick={regenerate}
+                                aria-label="답변 재생성"
+                              >
+                                <RefreshCw className="h-3.5 w-3.5" /> 재생성
+                              </button>
+                            ) : null}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -334,16 +442,30 @@ export function ChatClient({ threadId, initialMessages }: Props) {
                   </Button>
                 </div>
 
-                <Button
-                  type="button"
-                  size="icon"
-                  className="h-10 w-10 rounded-full shadow-sm"
-                  onClick={() => void sendMessage()}
-                  disabled={isLoading || !input.trim()}
-                  aria-label="전송"
-                >
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ArrowUp className="h-4 w-4" />}
-                </Button>
+                {isLoading ? (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="secondary"
+                    className="h-10 w-10 rounded-full shadow-sm"
+                    onClick={stopGenerating}
+                    aria-label="생성 중단"
+                    title="생성 중단"
+                  >
+                    <Square className="h-3.5 w-3.5 fill-current" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="button"
+                    size="icon"
+                    className="h-10 w-10 rounded-full shadow-sm"
+                    onClick={() => void sendMessage()}
+                    disabled={!input.trim()}
+                    aria-label="전송"
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
 
               {error ? <p className="mt-2 text-sm text-destructive">{error}</p> : null}

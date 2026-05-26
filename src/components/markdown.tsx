@@ -2,6 +2,7 @@
 
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeHighlight from "rehype-highlight";
 
 type Props = {
   content: string;
@@ -12,6 +13,7 @@ export function Markdown({ content }: Props) {
     <div className="markdown-body space-y-2 text-sm leading-7 text-foreground">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
+        rehypePlugins={[[rehypeHighlight, { detect: true, ignoreMissing: true }]]}
         components={{
           h1: ({ children }) => <h1 className="mt-3 text-lg font-semibold tracking-tight">{children}</h1>,
           h2: ({ children }) => <h2 className="mt-3 text-base font-semibold tracking-tight">{children}</h2>,

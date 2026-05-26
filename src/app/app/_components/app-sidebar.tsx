@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft, ChevronRight, MessageCircle, Plus, Search, Library, Sparkles, Trash2, Plug2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, MessageCircle, Plus, Search, Library, Sparkles, Trash2, Plug2, Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,6 +41,11 @@ export function AppSidebar({ userEmail, threads }: Props) {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<ThreadItem[]>(threads);
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     setItems(threads);
@@ -71,12 +76,47 @@ export function AppSidebar({ userEmail, threads }: Props) {
   };
 
   return (
-    <aside
-      className={cn(
-        "hidden h-screen shrink-0 border-r bg-background/70 backdrop-blur-xl transition-all lg:sticky lg:top-0 lg:flex lg:flex-col",
-        collapsed ? "w-[68px]" : "w-[320px]",
-      )}
-    >
+    <>
+      {/* 모바일 햄버거 버튼 */}
+      <button
+        type="button"
+        className="fixed left-3 top-2.5 z-50 grid h-10 w-10 place-items-center rounded-xl border bg-background/90 text-foreground shadow-sm backdrop-blur lg:hidden"
+        onClick={() => setMobileOpen(true)}
+        aria-label="메뉴 열기"
+      >
+        <Menu className="h-5 w-5" />
+      </button>
+
+      {/* 모바일 backdrop */}
+      {mobileOpen ? (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden
+        />
+      ) : null}
+
+      <aside
+        className={cn(
+          "shrink-0 border-r bg-background/95 backdrop-blur-xl transition-all",
+          // 데스크탑: sticky
+          "hidden h-screen lg:sticky lg:top-0 lg:flex lg:flex-col",
+          collapsed ? "lg:w-[68px]" : "lg:w-[320px]",
+          // 모바일: 열렸을 때 오버레이로 표시
+          mobileOpen && "!fixed inset-y-0 left-0 z-50 !flex h-screen w-[320px] !flex-col shadow-xl",
+        )}
+      >
+        {/* 모바일 닫기 버튼 */}
+        {mobileOpen ? (
+          <button
+            type="button"
+            className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-lg text-muted-foreground hover:bg-muted lg:hidden"
+            onClick={() => setMobileOpen(false)}
+            aria-label="메뉴 닫기"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        ) : null}
           <div className="flex h-14 items-center gap-2 px-3">
             <div className="grid h-9 w-9 place-items-center rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-cyan-500 text-white shadow-sm">
               <Sparkles className="h-4 w-4" />
@@ -218,6 +258,7 @@ export function AppSidebar({ userEmail, threads }: Props) {
           <div className="text-xs text-muted-foreground">로그인: {userEmail}</div>
         </div>
       ) : null}
-    </aside>
+      </aside>
+    </>
   );
 }

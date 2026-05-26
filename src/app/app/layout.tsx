@@ -34,7 +34,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 border-b bg-background/80 backdrop-blur">
-          <div className="flex h-14 items-center justify-between px-6">
+          <div className="flex h-14 items-center justify-between px-6 pl-16 lg:pl-6">
             <div className="font-semibold tracking-tight">Document Agent</div>
             <div className="flex items-center gap-1">
               <ThemeToggle />
