@@ -13,6 +13,7 @@ export type ChunkChatSource = {
   similarity: number;
   snippet?: string;
   doc_title?: string;
+  section_path?: string[];
 };
 
 export type UrlChatSource = {

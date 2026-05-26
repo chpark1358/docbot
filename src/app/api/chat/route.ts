@@ -13,7 +13,20 @@ import type { ChatSource } from "@/lib/database.types";
 export const runtime = "nodejs";
 
 type ThreadMessage = { role: "user" | "assistant"; content: string };
-type ChunkMatch = { id: string; content: string; similarity: number; doc_title?: string };
+type ChunkMatch = {
+  id: string;
+  content: string;
+  similarity: number;
+  doc_title?: string;
+  metadata?: Record<string, unknown> | null;
+};
+
+const extractSectionPath = (metadata: ChunkMatch["metadata"]): string[] => {
+  if (!metadata || typeof metadata !== "object") return [];
+  const raw = (metadata as { section_path?: unknown }).section_path;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((s): s is string => typeof s === "string");
+};
 type WebSource = { type: "url"; url: string; order: number };
 
 const MODERATION_MODEL = "omni-moderation-latest";
@@ -299,6 +312,7 @@ export async function POST(req: Request) {
       similarity: m.similarity,
       order: idx + 1,
       doc_title: m.doc_title ?? scopedDocumentTitle,
+      section_path: extractSectionPath(m.metadata),
     })) as ChatSource[];
 
   const input = [
