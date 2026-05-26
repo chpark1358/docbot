@@ -60,21 +60,21 @@ export function NewChatComposer({ readyCount }: Props) {
 
   return (
     <div className="mx-auto w-full max-w-4xl">
-      <div className="relative overflow-hidden rounded-3xl border border-slate-200 bg-white/90 p-6 shadow-[0_28px_90px_-34px_rgba(0,0,0,0.35)]">
-        <div className="pointer-events-none absolute inset-x-10 -top-16 h-40 rounded-full bg-gradient-to-r from-emerald-200/40 via-sky-200/40 to-amber-200/30 blur-3xl" />
+      <div className="relative overflow-hidden rounded-3xl border bg-card/95 p-6 shadow-[0_28px_90px_-34px_rgba(0,0,0,0.35)]">
+        <div className="pointer-events-none absolute inset-x-10 -top-16 h-40 rounded-full bg-gradient-to-r from-emerald-200/40 via-sky-200/40 to-amber-200/30 blur-3xl dark:from-emerald-500/15 dark:via-sky-500/15 dark:to-amber-500/10" />
         <div className="relative flex flex-col gap-4">
           <div className="space-y-1">
-            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700">
+            <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 dark:text-emerald-400">
               <Sparkles className="h-4 w-4" /> 사내 문서와 웹을 함께 활용해 답변합니다.
             </div>
-            <div className="text-xs text-slate-500">
+            <div className="text-xs text-muted-foreground">
               {readyCount > 0
                 ? `현재 ${readyCount}개의 사내 문서가 검색 대상입니다. 필요한 경우 웹 검색을 자동으로 활용합니다.`
                 : "아직 사내 문서가 없어도 됩니다. 웹 검색으로 답변할 수 있어요."}
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 shadow-inner">
+          <div className="rounded-2xl border bg-background/60 px-4 py-3 shadow-inner">
             <Textarea
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
