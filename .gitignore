@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# claude code (개인 환경)
+.claude/
+
+# graphify (그래프 산출물 — graph.html은 무거우니 항상 제외)
+graphify-out/graph.html
+graphify-out/graph.json
+
