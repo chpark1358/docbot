@@ -1,19 +1,12 @@
-import OpenAI from "openai";
 import { EMBEDDING_MODEL } from "@/lib/constants";
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+import { getOpenAI } from "@/lib/openai";
 
 const EMBEDDING_BATCH_SIZE = 96;
 
 export const embedChunks = async (chunks: string[]): Promise<number[][]> => {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error("OPENAI_API_KEY가 설정되어 있지 않습니다.");
-  }
-
   if (!chunks.length) return [];
 
+  const openai = getOpenAI();
   const embeddings: number[][] = [];
 
   for (let start = 0; start < chunks.length; start += EMBEDDING_BATCH_SIZE) {

@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import OpenAI from "openai";
 import { createClient } from "@/lib/supabase/server";
 import { buildPrompt } from "@/lib/prompt";
 import {
@@ -10,9 +9,8 @@ import {
   WEB_SEARCH_CONTEXT_SIZE,
 } from "@/lib/constants";
 import { ensureAllDocsVirtualDocumentId } from "@/lib/virtual-chat";
+import { getOpenAI } from "@/lib/openai";
 import type { ChatSource } from "@/lib/database.types";
-
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export const runtime = "nodejs";
 
@@ -67,13 +65,13 @@ const fetchThreadHistory = async (
 };
 
 const moderateText = async (text: string): Promise<boolean> => {
-  const res = await openai.moderations.create({ model: MODERATION_MODEL, input: text });
+  const res = await getOpenAI().moderations.create({ model: MODERATION_MODEL, input: text });
   return Boolean(res?.results?.[0]?.flagged);
 };
 
 const generateTitle = async (question: string): Promise<string | null> => {
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await getOpenAI().chat.completions.create({
       model: TITLE_MODEL,
       messages: [
         {
@@ -119,7 +117,7 @@ const searchDocuments = async (
   query: string,
   scopedDocumentId: string | null,
 ): Promise<ChunkMatch[]> => {
-  const embeddingRes = await openai.embeddings.create({ model: EMBEDDING_MODEL, input: query });
+  const embeddingRes = await getOpenAI().embeddings.create({ model: EMBEDDING_MODEL, input: query });
   const queryEmbedding = embeddingRes.data[0].embedding;
 
   if (scopedDocumentId) {
@@ -330,7 +328,7 @@ export async function POST(req: Request) {
         try {
           send({ type: "context", docCount: relevantMatches.length });
 
-          const r = await openai.responses.create({
+          const r = await getOpenAI().responses.create({
             model: CHAT_MODEL,
             instructions: prompt.system,
             input,
@@ -400,7 +398,7 @@ export async function POST(req: Request) {
   }
 
   // 논스트리밍
-  const r = await openai.responses.create({
+  const r = await getOpenAI().responses.create({
     model: CHAT_MODEL,
     instructions: prompt.system,
     input,
