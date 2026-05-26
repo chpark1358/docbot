@@ -34,13 +34,13 @@ const humanSize = (bytes: number) => {
 const statusLabel = (status: UploadResult["status"]) => {
   switch (status) {
     case "ready":
-      return { label: "처리 완료", className: "text-emerald-600" };
+      return { label: "처리 완료", className: "text-emerald-600 dark:text-emerald-400" };
     case "queued":
-      return { label: "대기", className: "text-slate-600" };
+      return { label: "대기", className: "text-muted-foreground" };
     case "failed":
       return { label: "실패", className: "text-destructive" };
     default:
-      return { label: status, className: "text-slate-600" };
+      return { label: status, className: "text-muted-foreground" };
   }
 };
 

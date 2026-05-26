@@ -63,15 +63,35 @@ const getFormat = (mimeType: string) => {
 const statusChip = (status: string) => {
   switch (status) {
     case "ready":
-      return { label: "처리 완료", className: "border-emerald-200 bg-emerald-50 text-emerald-700" };
+      return {
+        label: "처리 완료",
+        className:
+          "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900/40 dark:bg-emerald-500/10 dark:text-emerald-300",
+      };
     case "processing":
-      return { label: "처리 중", className: "border-amber-200 bg-amber-50 text-amber-700" };
+      return {
+        label: "처리 중",
+        className:
+          "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/40 dark:bg-amber-500/10 dark:text-amber-300",
+      };
     case "queued":
-      return { label: "대기", className: "border-slate-200 bg-slate-50 text-slate-700" };
+      return {
+        label: "대기",
+        className:
+          "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700/60 dark:bg-slate-500/10 dark:text-slate-300",
+      };
     case "failed":
-      return { label: "실패", className: "border-red-200 bg-red-50 text-red-700" };
+      return {
+        label: "실패",
+        className:
+          "border-red-200 bg-red-50 text-red-700 dark:border-red-900/40 dark:bg-red-500/10 dark:text-red-300",
+      };
     default:
-      return { label: status, className: "border-slate-200 bg-slate-50 text-slate-700" };
+      return {
+        label: status,
+        className:
+          "border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-700/60 dark:bg-slate-500/10 dark:text-slate-300",
+      };
   }
 };
 
