@@ -19,6 +19,8 @@ type ChunkMatch = {
   similarity: number;
   doc_title?: string;
   metadata?: Record<string, unknown> | null;
+  // hybrid RPC 한정: 이 청크가 FTS(어휘) 매칭에서 나왔는지. vector-only fallback 에서는 undefined.
+  fts_hit?: boolean;
 };
 
 const extractSectionPath = (metadata: ChunkMatch["metadata"]): string[] => {
@@ -309,7 +311,11 @@ export async function POST(req: Request) {
   } catch {
     matches = [];
   }
-  const relevantMatches = matches.filter((m) => (m.similarity ?? 0) >= MIN_SIMILARITY);
+  // 의미 매칭(코사인)이 충분히 강하거나, FTS(어휘) 매칭으로 들어온 청크는 유지한다.
+  // 후자가 없으면 키워드 단독 히트가 similarity=0 으로 걸러져 하이브리드 recall 이 사라진다.
+  const relevantMatches = matches.filter(
+    (m) => (m.similarity ?? 0) >= MIN_SIMILARITY || m.fts_hit === true,
+  );
 
   // 시스템 + 사용자 프롬프트 빌드
   const prompt = buildPrompt(

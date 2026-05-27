@@ -206,7 +206,8 @@ returns table (
   content text,
   metadata jsonb,
   similarity float,
-  rrf_score float
+  rrf_score float,
+  fts_hit boolean
 )
 language plpgsql
 security definer
@@ -274,11 +275,12 @@ begin
       (
         coalesce(1.0 / (rrf_k + v.rank), 0) +
         coalesce(1.0 / (rrf_k + f.rank), 0)
-      )::float as rrf_score
+      )::float as rrf_score,
+      (f.id is not null) as fts_hit
     from vector_hits v
     full outer join fts_hits f on v.id = f.id
   )
-  select c.id, c.document_id, c.doc_title, c.content, c.metadata, c.similarity, c.rrf_score
+  select c.id, c.document_id, c.doc_title, c.content, c.metadata, c.similarity, c.rrf_score, c.fts_hit
   from combined c
   order by c.rrf_score desc, c.similarity desc
   limit match_count;

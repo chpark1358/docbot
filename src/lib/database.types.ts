@@ -203,6 +203,7 @@ export interface Database {
           metadata: Json;
           similarity: number;
           rrf_score: number;
+          fts_hit: boolean;
         }[];
       };
     };
