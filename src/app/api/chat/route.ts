@@ -19,6 +19,8 @@ type ChunkMatch = {
   similarity: number;
   doc_title?: string;
   metadata?: Record<string, unknown> | null;
+  // hybrid RPC 한정: 이 청크가 FTS(어휘) 매칭에서 나왔는지. vector-only fallback 에서는 undefined.
+  fts_hit?: boolean;
 };
 
 const extractSectionPath = (metadata: ChunkMatch["metadata"]): string[] => {
@@ -131,21 +133,33 @@ const searchDocuments = async (
   const embeddingRes = await getOpenAI().embeddings.create({ model: EMBEDDING_MODEL, input: query });
   const queryEmbedding = embeddingRes.data[0].embedding;
 
-  if (scopedDocumentId) {
-    const { data } = await supabase.rpc("match_chunks", {
-      query_embedding: queryEmbedding,
-      doc_id: scopedDocumentId,
-      match_count: RAG_TOP_K,
-      similarity_threshold: 0.2,
-    });
-    return (data ?? []) as ChunkMatch[];
-  }
-
-  const { data } = await supabase.rpc("match_chunks_all_user", {
+  const { data, error } = await supabase.rpc("match_chunks_hybrid", {
+    query_text: query,
     query_embedding: queryEmbedding,
+    doc_id: scopedDocumentId,
     match_count: RAG_TOP_K,
     similarity_threshold: 0.2,
   });
+
+  if (error) {
+    // Hybrid RPC 가 아직 적용 안 된 환경에서는 vector-only 로 안전 폴백
+    if (scopedDocumentId) {
+      const fb = await supabase.rpc("match_chunks", {
+        query_embedding: queryEmbedding,
+        doc_id: scopedDocumentId,
+        match_count: RAG_TOP_K,
+        similarity_threshold: 0.2,
+      });
+      return (fb.data ?? []) as ChunkMatch[];
+    }
+    const fb = await supabase.rpc("match_chunks_all_user", {
+      query_embedding: queryEmbedding,
+      match_count: RAG_TOP_K,
+      similarity_threshold: 0.2,
+    });
+    return (fb.data ?? []) as ChunkMatch[];
+  }
+
   return (data ?? []) as ChunkMatch[];
 };
 
@@ -297,7 +311,11 @@ export async function POST(req: Request) {
   } catch {
     matches = [];
   }
-  const relevantMatches = matches.filter((m) => (m.similarity ?? 0) >= MIN_SIMILARITY);
+  // 의미 매칭(코사인)이 충분히 강하거나, FTS(어휘) 매칭으로 들어온 청크는 유지한다.
+  // 후자가 없으면 키워드 단독 히트가 similarity=0 으로 걸러져 하이브리드 recall 이 사라진다.
+  const relevantMatches = matches.filter(
+    (m) => (m.similarity ?? 0) >= MIN_SIMILARITY || m.fts_hit === true,
+  );
 
   // 시스템 + 사용자 프롬프트 빌드
   const prompt = buildPrompt(
